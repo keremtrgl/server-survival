@@ -1,1 +1,65 @@
-# server-survival
+# Server Survival 🖥️🔥
+
+![Gameplay Demo](assets/gameplay.gif)
+
+**Server Survival** is an interactive 3D simulation game where you play as a **Cloud Architect**. Your mission is to build and scale a resilient cloud infrastructure to handle increasing traffic loads while fighting off DDoS attacks and managing your budget.
+
+## 🎮 How to Play
+
+### Objective
+Survive as long as possible! Manage your **Budget ($)** and **Reputation (%)**.
+- **Earn Money** by successfully processing legitimate traffic (Web & API).
+- **Lose Reputation** if requests fail or if Fraud traffic slips through.
+- **Game Over** if Reputation hits 0% or you go bankrupt.
+
+### Traffic Types
+- 🟢 **Web Traffic (Green):** Needs to be stored in **S3**.
+- 🟠 **API Traffic (Orange):** Needs to be processed and saved to a **Database**.
+- 🟣 **Fraud/DDoS (Pink):** Must be blocked by a **WAF**.
+
+### Infrastructure & Services
+Build your architecture using the toolbar. Each service has a cost and upkeep:
+
+| Service | Cost | Upkeep | Function |
+| :--- | :--- | :--- | :--- |
+| **WAF** | $50 | Low | **Firewall.** The first line of defense. Blocks Fraud traffic. |
+| **ALB** | $50 | Medium | **Load Balancer.** Distributes traffic to multiple Compute instances. |
+| **Compute** | $100 | High | **EC2 Instance.** Processes requests and routes them to storage. |
+| **Database** | $200 | Very High | **RDS.** The destination for API traffic. |
+| **S3** | $25 | Low | **Storage.** The destination for Web traffic. |
+
+### Scoring & Economy
+- **Web Request:** +$10 / +10 Score
+- **API Request:** +$20 / +20 Score
+- **Fraud Blocked:** +25 Score (Critical for survival!)
+- **Fraud Leak:** -10 Reputation (Huge penalty!)
+
+### Controls
+- **Left Click:** Select tools, place services, and connect nodes.
+- **Right Click + Drag:** Pan the camera.
+- **Connect Tool:** Click two nodes to create a connection (flow direction matters!).
+    - *Valid Flows:* Internet -> WAF -> ALB -> Compute -> (DB/S3)
+- **Delete Tool:** Remove services to recover 50% of the cost.
+- **Time Controls:** Pause, Play (1x), and Fast Forward (3x).
+
+## 🧠 Strategy Tips
+1.  **Block Fraud First:** Always place a WAF immediately connected to the Internet. Fraud leaks destroy reputation fast.
+2.  **Scale Compute:** As traffic increases, a single Compute node won't be enough. Use an ALB to split traffic across multiple Compute nodes.
+3.  **Watch Your Queues:** If a service's queue fills up (red ring), requests will fail. Add more capacity!
+4.  **Budget Wisely:** Databases are expensive. Don't over-provision them early on.
+
+## 🛠️ Tech Stack
+
+- **Core:** Vanilla JavaScript (ES6+)
+- **Rendering:** [Three.js](https://threejs.org/) for 3D visualization.
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) for the glassmorphism UI.
+- **Build:** No build step required! Just standard HTML/CSS/JS.
+
+## 🚀 Getting Started
+
+1.  Clone the repository.
+2.  Open `index.html` in your modern web browser.
+3.  Start building your cloud empire!
+
+---
+*Built with code and chaos.*
