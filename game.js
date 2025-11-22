@@ -1,11 +1,4 @@
-/**
- * SERVER: Game Logic
- * Single file implementation based on Three.js
- */
 
-
-
-// --- ENUMS & CONFIGURATION ---
 const TRAFFIC_TYPES = {
     WEB: 'WEB',     // Requires S3 (Simpler, lower reward)
     API: 'API',     // Requires RDS (Complex, higher reward)
@@ -37,32 +30,27 @@ const CONFIG = {
         startBudget: 500,
         baseRPS: 1.0,
         rampUp: 0.005,
-        // Traffic Distribution (Must sum to 1.0)
         trafficDistribution: {
-            [TRAFFIC_TYPES.WEB]: 0.50, // 50%
-            [TRAFFIC_TYPES.API]: 0.35, // 35%
-            [TRAFFIC_TYPES.FRAUD]: 0.15 // 15%
+            [TRAFFIC_TYPES.WEB]: 0.50,
+            [TRAFFIC_TYPES.API]: 0.35,
+            [TRAFFIC_TYPES.FRAUD]: 0.15
         },
 
-        // Score Points based on outcome
         SCORE_POINTS: {
             WEB_COMPLETED: 5,
             API_COMPLETED: 10,
-            // BUG FIX: Removed reputation penalty for generic failure (queue overflow, wrong connection)
             FAIL_REPUTATION: 0,
-            FRAUD_PASSED_REPUTATION: -10, // Huge rep penalty for passed fraud (CRITICAL FAILURE)
-            FRAUD_BLOCKED_SCORE: 25 // High score for WAF success
+            FRAUD_PASSED_REPUTATION: -10,
+            FRAUD_BLOCKED_SCORE: 25
         }
     }
 };
 
-// --- GAME STATE ---
 const STATE = {
     money: 0,
     reputation: 0,
     requestsProcessed: 0,
 
-    // New Scoring Variables
     score: {
         total: 0,
         web: 0,
@@ -90,11 +78,8 @@ const STATE = {
         connections: []
     },
 
-    // Audio
     sound: null
 };
-
-// --- AUDIO SYSTEM (8-bit Style) ---
 class SoundManager {
     constructor() {
         this.ctx = null;
@@ -110,13 +95,11 @@ class SoundManager {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         this.ctx = new AudioContext();
         this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.value = 0.3; // Default volume
+        this.masterGain.gain.value = 0.3;
         this.masterGain.connect(this.ctx.destination);
 
-        // Try to play BGM
         this.playBGM();
 
-        // Resume context and BGM on interaction if blocked
         const resumeAudio = () => {
             if (this.ctx.state === 'suspended') this.ctx.resume();
             if (this.bgm.paused && !this.muted) this.bgm.play().catch(e => console.log("BGM autoplay blocked"));
@@ -165,7 +148,6 @@ class SoundManager {
         osc.stop(this.ctx.currentTime + startTime + duration);
     }
 
-    // SFX Presets
     playPlace() { this.playTone(440, 'square', 0.1); }
     playConnect() { this.playTone(880, 'sine', 0.1); }
     playDelete() {
@@ -173,8 +155,8 @@ class SoundManager {
         this.playTone(150, 'sawtooth', 0.2, 0.1);
     }
     playSuccess() {
-        this.playTone(523.25, 'square', 0.1); // C5
-        this.playTone(659.25, 'square', 0.1, 0.1); // E5
+        this.playTone(523.25, 'square', 0.1);
+        this.playTone(659.25, 'square', 0.1, 0.1);
     }
     playFail() {
         this.playTone(150, 'sawtooth', 0.3);
@@ -185,7 +167,6 @@ class SoundManager {
     }
     playGameOver() {
         if (!this.ctx || this.muted) return;
-        // Sad arpeggio
         [440, 415, 392, 370].forEach((f, i) => {
             this.playTone(f, 'triangle', 0.4, i * 0.4);
         });
@@ -194,7 +175,7 @@ class SoundManager {
 
 STATE.sound = new SoundManager();
 
-// --- INIT THREE.JS (Standard Orthographic Setup) ---
+
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(CONFIG.colors.bg);
@@ -244,32 +225,25 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-// Camera panning state
 let isPanning = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
 const panSpeed = 0.1;
 
-// --- GAME LOGIC ---
-
 function startGame() {
-    // Reset State
     STATE.money = CONFIG.survival.startBudget;
     STATE.reputation = 100;
     STATE.requestsProcessed = 0;
     STATE.currentRPS = CONFIG.survival.baseRPS;
-    STATE.timeScale = 0; // Start Paused
+    STATE.timeScale = 0;
     STATE.spawnTimer = 0;
     STATE.score = { total: 0, web: 0, api: 0, fraudBlocked: 0 };
 
-    // Init Audio
     STATE.sound.init();
 
-    // Reset camera position
     camera.position.set(40, 40, 40);
     camera.lookAt(0, 0, 0);
 
-    // Reset Objects
     STATE.services.forEach(s => s.destroy());
     STATE.services = [];
     STATE.requests.forEach(r => r.destroy());
@@ -278,10 +252,9 @@ function startGame() {
     STATE.connections = [];
     STATE.internetNode.connections = [];
 
-    // UI Reset
     document.getElementById('modal').classList.add('hidden');
     document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-pause').classList.add('active'); // Set Pause UI active
+    document.getElementById('btn-pause').classList.add('active');
     updateScoreUI();
 
     console.log(`Started Survival Mode (Paused)`);
@@ -292,14 +265,13 @@ function startGame() {
         animate(performance.now());
     }
 
-    // Show Onboarding on first load or restart
     showOnboarding();
 }
 
 function restartGame() { startGame(); }
 setTimeout(() => startGame(), 100);
 
-// --- CLASSES ---
+
 
 class Service {
     constructor(type, pos) {
@@ -364,9 +336,7 @@ class Service {
         while (this.processing.length < this.config.capacity && this.queue.length > 0) {
             const req = this.queue.shift();
 
-            // WAF Logic
             if (this.type === 'waf' && req.type === TRAFFIC_TYPES.FRAUD) {
-                // WAF blocks fraud
                 updateScore(req, 'FRAUD_BLOCKED');
                 req.destroy();
                 continue;
@@ -388,25 +358,20 @@ class Service {
             if (job.timer >= this.config.processingTime) {
                 this.processing.splice(i, 1);
 
-                // Check for End of Path (DB or S3)
                 if (this.type === 'db' || this.type === 's3') {
                     const expectedType = this.type === 'db' ? TRAFFIC_TYPES.API : TRAFFIC_TYPES.WEB;
                     if (job.req.type === expectedType) {
-                        finishRequest(job.req); // Success
+                        finishRequest(job.req);
                     } else {
-                        failRequest(job.req); // Wrong data sink!
+                        failRequest(job.req);
                     }
                     continue;
                 }
 
-                // FORWARDING LOGIC (ALB, WAF, Compute)
-
                 if (this.type === 'compute') {
-                    // Compute routing logic: must deterministically route to DB for API or S3 for WEB
                     const requiredType = job.req.type === TRAFFIC_TYPES.API ? 'db' : (job.req.type === TRAFFIC_TYPES.WEB ? 's3' : null);
 
                     if (requiredType) {
-                        // Find a connected service that matches the required type among ALL connections
                         const correctTarget = STATE.services.find(s =>
                             this.connections.includes(s.id) && s.type === requiredType
                         );
@@ -414,22 +379,18 @@ class Service {
                         if (correctTarget) {
                             job.req.flyTo(correctTarget);
                         } else {
-                            // Compute finished, but the correct data sink (RDS or S3) is not connected
                             failRequest(job.req);
                         }
                     } else {
-                        // Should only happen if FRAUD traffic reaches compute unblocked
                         failRequest(job.req);
                     }
                 } else {
-                    // Standard routing for WAF/ALB: Load balance across connected services
                     const nextNodeId = this.connections[Math.floor(Math.random() * this.connections.length)];
                     const nextSvc = STATE.services.find(s => s.id === nextNodeId);
 
                     if (nextSvc) {
                         job.req.flyTo(nextSvc);
                     } else {
-                        // No connection
                         failRequest(job.req);
                     }
                 }
@@ -438,16 +399,16 @@ class Service {
 
         const totalLoad = (this.processing.length + this.queue.length) / (this.config.capacity * 2);
         if (totalLoad > 0.8) {
-            this.loadRing.material.color.setHex(0xff0000);       // RED - Critical!
+            this.loadRing.material.color.setHex(0xff0000);
             this.loadRing.material.opacity = 0.8;
         } else if (totalLoad > 0.5) {
-            this.loadRing.material.color.setHex(0xffaa00);       // ORANGE - Warning
+            this.loadRing.material.color.setHex(0xffaa00);
             this.loadRing.material.opacity = 0.6;
         } else if (totalLoad > 0.2) {
-            this.loadRing.material.color.setHex(0xffff00);       // YELLOW - Busy
+            this.loadRing.material.color.setHex(0xffff00);
             this.loadRing.material.opacity = 0.4;
         } else {
-            this.loadRing.material.color.setHex(0x00ff00);       // GREEN - Healthy
+            this.loadRing.material.color.setHex(0x00ff00);
             this.loadRing.material.opacity = 0.3;
         }
     }
@@ -503,11 +464,10 @@ class Request {
                 this.mesh.position.copy(this.target.position);
                 this.mesh.position.y = 2;
 
-                // Queue overflow check happens here
                 if (this.target.queue.length < 20) {
                     this.target.queue.push(this);
                 } else {
-                    failRequest(this); // Queue overflow
+                    failRequest(this);
                 }
             } else {
                 const dest = this.target.position.clone();
@@ -525,7 +485,7 @@ class Request {
     }
 }
 
-// --- HELPERS ---
+
 
 function getIntersect(clientX, clientY) {
     mouse.x = (clientX / window.innerWidth) * 2 - 1;
@@ -570,7 +530,6 @@ function spawnRequest() {
     STATE.requests.push(req);
     const conns = STATE.internetNode.connections;
     if (conns.length > 0) {
-        // If WAF exists, always route through WAF first if it is the entry point
         const entryNodes = conns.map(id => STATE.services.find(s => s.id === id));
         const wafEntry = entryNodes.find(s => s?.type === 'waf');
         const target = wafEntry || entryNodes[Math.floor(Math.random() * entryNodes.length)];
@@ -587,7 +546,6 @@ function updateScore(req, outcome) {
         STATE.score.total += points.FRAUD_BLOCKED_SCORE;
         STATE.sound.playFraudBlocked();
     } else if (req.type === TRAFFIC_TYPES.FRAUD && outcome === 'FRAUD_PASSED') {
-        // This is the CRITICAL failure that results in reputation loss
         STATE.reputation += points.FRAUD_PASSED_REPUTATION;
         console.warn(`FRAUD PASSED: ${points.FRAUD_PASSED_REPUTATION} Rep. (Critical Failure)`);
     } else if (outcome === 'COMPLETED') {
@@ -601,10 +559,8 @@ function updateScore(req, outcome) {
             STATE.money += points.API_COMPLETED;
         }
     } else if (outcome === 'FAILED') {
-        // Common failure (Queue Overflow, Wrong Sink, No Connection).
-        // Reputation loss for generic failures is set to 0 in CONFIG.
-        STATE.reputation += points.FAIL_REPUTATION; // This is 0 now
-        STATE.score.total -= (req.type === TRAFFIC_TYPES.API ? points.API_COMPLETED : points.WEB_COMPLETED) / 2; // Deduct half potential earnings
+        STATE.reputation += points.FAIL_REPUTATION;
+        STATE.score.total -= (req.type === TRAFFIC_TYPES.API ? points.API_COMPLETED : points.WEB_COMPLETED) / 2;
     }
 
     updateScoreUI();
@@ -617,7 +573,6 @@ function finishRequest(req) {
 }
 
 function failRequest(req) {
-    // Special check for fraud that bypassed WAF
     if (req.type === TRAFFIC_TYPES.FRAUD) {
         updateScore(req, 'FRAUD_PASSED');
     } else {
@@ -646,7 +601,6 @@ function flashMoney() {
     setTimeout(() => el.classList.remove('text-red-500'), 300);
 }
 
-// --- ONBOARDING LOGIC ---
 function showOnboarding() {
     document.getElementById('onboarding-modal').style.display = 'flex';
     nextOnboardingStep(1);
@@ -660,13 +614,10 @@ function nextOnboardingStep(step) {
 function closeOnboarding() {
     document.getElementById('onboarding-modal').style.display = 'none';
 
-    // If game is paused (which it is on start), highlight the Play button
     if (STATE.timeScale === 0) {
         document.getElementById('btn-play').classList.add('pulse-green');
     }
 }
-
-// --- INPUT & ACTIONS ---
 
 function createService(type, pos) {
     if (STATE.money < CONFIG.services[type].cost) { flashMoney(); return; }
@@ -682,19 +633,16 @@ function createConnection(fromId, toId) {
     const from = getEntity(fromId), to = getEntity(toId);
     if (!from || !to || from.connections.includes(toId)) return;
 
-    // Validation: Only specific flows are allowed
     let valid = false;
     const t1 = from.type, t2 = to.type;
 
     if (t1 === 'internet' && (t2 === 'waf' || t2 === 'alb')) valid = true;
-    else if (t1 === 'waf' && t2 === 'alb') valid = true; // WAF -> ALB
-    else if (t1 === 'alb' && t2 === 'compute') valid = true; // ALB -> Compute
-    // Compute must connect to both DB and S3
+    else if (t1 === 'waf' && t2 === 'alb') valid = true;
+    else if (t1 === 'alb' && t2 === 'compute') valid = true;
     else if (t1 === 'compute' && (t2 === 'db' || t2 === 's3')) valid = true;
 
     if (!valid) {
         new Audio('assets/sounds/click-9.mp3').play();
-        // Using a non-alert message for invalid connections
         console.error("Invalid connection topology: WAF/ALB from Internet -> WAF -> ALB -> Compute -> (RDS/S3)");
         return;
     }
@@ -716,7 +664,6 @@ function deleteObject(id) {
     const svc = STATE.services.find(s => s.id === id);
     if (!svc) return;
 
-    // Clean connections
     STATE.services.forEach(s => s.connections = s.connections.filter(c => c !== id));
     STATE.internetNode.connections = STATE.internetNode.connections.filter(c => c !== id);
     const toRemove = STATE.connections.filter(c => c.from === id || c.to === id);
@@ -730,7 +677,7 @@ function deleteObject(id) {
 }
 
 
-// Input Handlers
+
 window.setTool = (t) => {
     STATE.activeTool = t; STATE.selectedNodeId = null;
     document.querySelectorAll('.service-btn').forEach(b => b.classList.remove('active'));
@@ -755,15 +702,12 @@ window.toggleMute = () => {
     document.getElementById('tool-mute').classList.toggle('bg-red-900', muted);
 };
 
-// --- MOUSE LISTENERS FOR INTERACTION AND CAMERA PANNING ---
-
-container.addEventListener('contextmenu', (e) => e.preventDefault()); // Prevent context menu on right click
+container.addEventListener('contextmenu', (e) => e.preventDefault());
 
 container.addEventListener('mousedown', (e) => {
     if (!STATE.isRunning) return;
 
-    // Camera Panning Setup (Right-click or middle-click)
-    if (e.button === 2 || e.button === 1) { // 2 = Right, 1 = Middle
+    if (e.button === 2 || e.button === 1) {
         isPanning = true;
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
@@ -772,7 +716,6 @@ container.addEventListener('mousedown', (e) => {
         return;
     }
 
-    // Game Interaction Logic (Left-click only)
     const i = getIntersect(e.clientX, e.clientY);
     if (STATE.activeTool === 'delete' && i.type === 'service') deleteObject(i.id);
     else if (STATE.activeTool === 'connect' && (i.type === 'service' || i.type === 'internet')) {
@@ -784,7 +727,6 @@ container.addEventListener('mousedown', (e) => {
 });
 
 container.addEventListener('mousemove', (e) => {
-    // Tooltip Logic
     const i = getIntersect(e.clientX, e.clientY);
     const t = document.getElementById('tooltip');
     if (i.type === 'service') {
@@ -803,22 +745,16 @@ container.addEventListener('mousemove', (e) => {
         t.style.display = 'none';
     }
 
-
-    // Camera Panning Logic (Right-click drag)
     if (isPanning) {
         const dx = e.clientX - lastMouseX;
         const dy = e.clientY - lastMouseY;
 
-        // Convert screen movement to world movement for Orthographic camera
-        // Scaling by camera's view size to keep movement consistent regardless of zoom/aspect ratio
         const panX = -dx * (camera.right - camera.left) / window.innerWidth * panSpeed;
         const panY = dy * (camera.top - camera.bottom) / window.innerHeight * panSpeed;
 
-        // Move the camera position (both X and Z axes)
         camera.position.x += panX;
         camera.position.z += panY;
 
-        // Keep the camera pointing at its new position on the ground plane (Y=0)
         camera.lookAt(camera.position.x, 0, camera.position.z);
         camera.updateProjectionMatrix();
 
@@ -835,7 +771,7 @@ container.addEventListener('mouseup', (e) => {
 });
 
 
-// Game Loop
+
 function animate(time) {
     STATE.animationId = requestAnimationFrame(animate);
     if (!STATE.isRunning) return;
@@ -863,7 +799,7 @@ function animate(time) {
     document.getElementById('rep-bar').style.width = `${Math.max(0, STATE.reputation)}%`;
     document.getElementById('rps-display').innerText = `${STATE.currentRPS.toFixed(1)} req/s`;
 
-    // Survival Game Over Check Only
+
     if (STATE.reputation <= 0 || STATE.money <= -1000) {
         STATE.isRunning = false;
         document.getElementById('modal-title').innerText = "SYSTEM FAILURE";
@@ -878,7 +814,6 @@ function animate(time) {
 
 window.addEventListener('resize', () => {
     const aspect = window.innerWidth / window.innerHeight;
-    // Update camera frustum to maintain aspect ratio for orthographic camera
     camera.left = -d * aspect;
     camera.right = d * aspect;
     camera.top = d;
