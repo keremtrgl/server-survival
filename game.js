@@ -27,14 +27,14 @@ const CONFIG = {
         requestFail: 0xef4444
     },
     services: {
-        waf: { name: "WAF Firewall", cost: 50, type: 'waf', processingTime: 20, capacity: 100, upkeep: 1 },
-        alb: { name: "Load Balancer", cost: 50, type: 'alb', processingTime: 50, capacity: 50, upkeep: 2 },
-        compute: { name: "EC2 Compute", cost: 100, type: 'compute', processingTime: 600, capacity: 5, upkeep: 5 },
-        db: { name: "RDS Database", cost: 200, type: 'db', processingTime: 300, capacity: 20, upkeep: 10 },
-        s3: { name: "S3 Storage", cost: 25, type: 's3', processingTime: 200, capacity: 100, upkeep: 1 }
+        waf: { name: "WAF Firewall", cost: 50, type: 'waf', processingTime: 20, capacity: 100, upkeep: 5 },
+        alb: { name: "Load Balancer", cost: 50, type: 'alb', processingTime: 50, capacity: 50, upkeep: 8 },
+        compute: { name: "EC2 Compute", cost: 100, type: 'compute', processingTime: 600, capacity: 5, upkeep: 15 },
+        db: { name: "RDS Database", cost: 200, type: 'db', processingTime: 300, capacity: 20, upkeep: 30 },
+        s3: { name: "S3 Storage", cost: 25, type: 's3', processingTime: 200, capacity: 100, upkeep: 5 }
     },
     survival: {
-        startBudget: 5000,
+        startBudget: 500,
         baseRPS: 1.0,
         rampUp: 0.005,
         // Traffic Distribution (Must sum to 1.0)
@@ -46,8 +46,8 @@ const CONFIG = {
 
         // Score Points based on outcome
         SCORE_POINTS: {
-            WEB_COMPLETED: 10,
-            API_COMPLETED: 20,
+            WEB_COMPLETED: 5,
+            API_COMPLETED: 10,
             // BUG FIX: Removed reputation penalty for generic failure (queue overflow, wrong connection)
             FAIL_REPUTATION: 0,
             FRAUD_PASSED_REPUTATION: -10, // Huge rep penalty for passed fraud (CRITICAL FAILURE)
@@ -88,8 +88,83 @@ const STATE = {
         type: 'internet',
         position: new THREE.Vector3(-40, 0, 0),
         connections: []
-    }
+    },
+
+    // Audio
+    sound: null
 };
+
+// --- AUDIO SYSTEM (8-bit Style) ---
+class SoundManager {
+    constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.masterGain = null;
+    }
+
+    init() {
+        if (this.ctx) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = 0.3; // Default volume
+        this.masterGain.connect(this.ctx.destination);
+    }
+
+    toggleMute() {
+        this.muted = !this.muted;
+        if (this.masterGain) {
+            this.masterGain.gain.value = this.muted ? 0 : 0.3;
+        }
+        return this.muted;
+    }
+
+    playTone(freq, type, duration, startTime = 0) {
+        if (!this.ctx || this.muted) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + startTime);
+
+        gain.gain.setValueAtTime(1, this.ctx.currentTime + startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(this.ctx.currentTime + startTime);
+        osc.stop(this.ctx.currentTime + startTime + duration);
+    }
+
+    // SFX Presets
+    playPlace() { this.playTone(440, 'square', 0.1); }
+    playConnect() { this.playTone(880, 'sine', 0.1); }
+    playDelete() {
+        this.playTone(200, 'sawtooth', 0.2);
+        this.playTone(150, 'sawtooth', 0.2, 0.1);
+    }
+    playSuccess() {
+        this.playTone(523.25, 'square', 0.1); // C5
+        this.playTone(659.25, 'square', 0.1, 0.1); // E5
+    }
+    playFail() {
+        this.playTone(150, 'sawtooth', 0.3);
+    }
+    playFraudBlocked() {
+        this.playTone(800, 'triangle', 0.05);
+        this.playTone(1200, 'triangle', 0.1, 0.05);
+    }
+    playGameOver() {
+        if (!this.ctx || this.muted) return;
+        // Sad arpeggio
+        [440, 415, 392, 370].forEach((f, i) => {
+            this.playTone(f, 'triangle', 0.4, i * 0.4);
+        });
+    }
+}
+
+STATE.sound = new SoundManager();
 
 // --- INIT THREE.JS (Standard Orthographic Setup) ---
 const container = document.getElementById('canvas-container');
@@ -158,6 +233,9 @@ function startGame() {
     STATE.timeScale = 0; // Start Paused
     STATE.spawnTimer = 0;
     STATE.score = { total: 0, web: 0, api: 0, fraudBlocked: 0 };
+
+    // Init Audio
+    STATE.sound.init();
 
     // Reset camera position
     camera.position.set(40, 40, 40);
@@ -330,10 +408,20 @@ class Service {
             }
         }
 
-        const load = this.processing.length / this.config.capacity;
-        if (load > 0.8) this.loadRing.material.color.setHex(0xff0000);
-        else if (load > 0.4) this.loadRing.material.color.setHex(0xffff00);
-        else this.loadRing.material.color.setHex(0x333333);
+        const totalLoad = (this.processing.length + this.queue.length) / (this.config.capacity * 2);
+        if (totalLoad > 0.8) {
+            this.loadRing.material.color.setHex(0xff0000);       // RED - Critical!
+            this.loadRing.material.opacity = 0.8;
+        } else if (totalLoad > 0.5) {
+            this.loadRing.material.color.setHex(0xffaa00);       // ORANGE - Warning
+            this.loadRing.material.opacity = 0.6;
+        } else if (totalLoad > 0.2) {
+            this.loadRing.material.color.setHex(0xffff00);       // YELLOW - Busy
+            this.loadRing.material.opacity = 0.4;
+        } else {
+            this.loadRing.material.color.setHex(0x00ff00);       // GREEN - Healthy
+            this.loadRing.material.opacity = 0.3;
+        }
     }
 
     destroy() {
@@ -469,6 +557,7 @@ function updateScore(req, outcome) {
     if (outcome === 'FRAUD_BLOCKED') {
         STATE.score.fraudBlocked += points.FRAUD_BLOCKED_SCORE;
         STATE.score.total += points.FRAUD_BLOCKED_SCORE;
+        STATE.sound.playFraudBlocked();
     } else if (req.type === TRAFFIC_TYPES.FRAUD && outcome === 'FRAUD_PASSED') {
         // This is the CRITICAL failure that results in reputation loss
         STATE.reputation += points.FRAUD_PASSED_REPUTATION;
@@ -497,6 +586,7 @@ function finishRequest(req) {
     STATE.requestsProcessed++;
     updateScore(req, 'COMPLETED');
     removeRequest(req);
+    STATE.sound.playSuccess();
 }
 
 function failRequest(req) {
@@ -506,6 +596,7 @@ function failRequest(req) {
     } else {
         updateScore(req, 'FAILED');
     }
+    STATE.sound.playFail();
     req.mesh.material.color.setHex(CONFIG.colors.requestFail);
     setTimeout(() => removeRequest(req), 500);
 }
@@ -555,6 +646,7 @@ function createService(type, pos) {
     if (STATE.services.find(s => s.position.distanceTo(pos) < 1)) return;
     STATE.money -= CONFIG.services[type].cost;
     STATE.services.push(new Service(type, pos));
+    STATE.sound.playPlace();
 }
 
 function createConnection(fromId, toId) {
@@ -587,6 +679,7 @@ function createConnection(fromId, toId) {
     const line = new THREE.Line(geo, mat);
     connectionGroup.add(line);
     STATE.connections.push({ from: fromId, to: toId, mesh: line });
+    STATE.sound.playConnect();
 }
 
 function deleteObject(id) {
@@ -603,6 +696,7 @@ function deleteObject(id) {
     svc.destroy();
     STATE.services = STATE.services.filter(s => s.id !== id);
     STATE.money += Math.floor(svc.config.cost / 2);
+    STATE.sound.playDelete();
 }
 
 
@@ -622,6 +716,13 @@ window.setTimeScale = (s) => {
         document.getElementById('btn-play').classList.remove('pulse-green');
     }
     if (s === 3) document.getElementById('btn-fast').classList.add('active');
+};
+
+window.toggleMute = () => {
+    const muted = STATE.sound.toggleMute();
+    const icon = document.getElementById('mute-icon');
+    icon.innerText = muted ? '🔇' : '🔊';
+    document.getElementById('tool-mute').classList.toggle('bg-red-900', muted);
 };
 
 // --- MOUSE LISTENERS FOR INTERACTION AND CAMERA PANNING ---
@@ -723,6 +824,11 @@ function animate(time) {
     }
 
     document.getElementById('money-display').innerText = `$${Math.floor(STATE.money)}`;
+
+    const totalUpkeep = STATE.services.reduce((sum, s) => sum + s.config.upkeep / 60, 0);
+    const upkeepDisplay = document.getElementById('upkeep-display');
+    if (upkeepDisplay) upkeepDisplay.innerText = `-$${totalUpkeep.toFixed(2)}/s`;
+
     STATE.reputation = Math.min(100, STATE.reputation);
     document.getElementById('rep-bar').style.width = `${Math.max(0, STATE.reputation)}%`;
     document.getElementById('rps-display').innerText = `${STATE.currentRPS.toFixed(1)} req/s`;
@@ -734,6 +840,7 @@ function animate(time) {
         document.getElementById('modal-title').classList.add("text-red-500");
         document.getElementById('modal-desc').innerText = `Final Score: ${STATE.score.total}`;
         document.getElementById('modal').classList.remove('hidden');
+        STATE.sound.playGameOver();
     }
 
     renderer.render(scene, camera);

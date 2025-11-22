@@ -28,6 +28,10 @@
                     <span id="money-display"
                         class="text-green-400 font-mono text-xl font-bold transition-colors duration-300">$5000</span>
                 </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-500">Upkeep Cost</span>
+                    <span id="upkeep-display" class="text-red-400 font-mono">-$0.00/s</span>
+                </div>
                 <div class="flex justify-between items-center">
                     <span class="text-gray-400 text-sm">REPUTATION</span>
                     <div class="w-32 h-3 bg-gray-800 rounded-full overflow-hidden relative">
@@ -140,6 +144,14 @@
                 onclick="showOnboarding()">
                 <div class="text-xl">?</div>
                 <span class="text-[9px] font-bold mt-1 uppercase">Help</span>
+            </button>
+
+            <!-- Mute Button -->
+            <button id="tool-mute"
+                class="service-btn bg-gray-700 text-gray-200 p-2 rounded-lg w-16 h-16 flex flex-col items-center justify-center border border-gray-600"
+                onclick="toggleMute()">
+                <div class="text-xl" id="mute-icon">🔊</div>
+                <span class="text-[9px] font-bold mt-1 uppercase">Sound</span>
             </button>
 
             <!-- Tools -->
