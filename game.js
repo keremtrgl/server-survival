@@ -682,6 +682,7 @@ window.setTool = (t) => {
     STATE.activeTool = t; STATE.selectedNodeId = null;
     document.querySelectorAll('.service-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`tool-${t}`).classList.add('active');
+    new Audio('assets/sounds/click-9.mp3').play();
 };
 
 window.setTimeScale = (s) => {
