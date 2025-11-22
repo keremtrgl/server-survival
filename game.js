@@ -100,6 +100,9 @@ class SoundManager {
         this.ctx = null;
         this.muted = false;
         this.masterGain = null;
+        this.bgm = new Audio('assets/sounds/game-background.mp3');
+        this.bgm.loop = true;
+        this.bgm.volume = 0.2;
     }
 
     init() {
@@ -109,6 +112,24 @@ class SoundManager {
         this.masterGain = this.ctx.createGain();
         this.masterGain.gain.value = 0.3; // Default volume
         this.masterGain.connect(this.ctx.destination);
+
+        // Try to play BGM
+        this.playBGM();
+
+        // Resume context and BGM on interaction if blocked
+        const resumeAudio = () => {
+            if (this.ctx.state === 'suspended') this.ctx.resume();
+            if (this.bgm.paused && !this.muted) this.bgm.play().catch(e => console.log("BGM autoplay blocked"));
+            window.removeEventListener('click', resumeAudio);
+            window.removeEventListener('keydown', resumeAudio);
+        };
+        window.addEventListener('click', resumeAudio);
+        window.addEventListener('keydown', resumeAudio);
+    }
+
+    playBGM() {
+        if (this.muted) return;
+        this.bgm.play().catch(e => console.log("Waiting for interaction to play BGM"));
     }
 
     toggleMute() {
@@ -116,6 +137,13 @@ class SoundManager {
         if (this.masterGain) {
             this.masterGain.gain.value = this.muted ? 0 : 0.3;
         }
+
+        if (this.muted) {
+            this.bgm.pause();
+        } else {
+            this.bgm.play().catch(e => { });
+        }
+
         return this.muted;
     }
 
@@ -586,7 +614,6 @@ function finishRequest(req) {
     STATE.requestsProcessed++;
     updateScore(req, 'COMPLETED');
     removeRequest(req);
-    STATE.sound.playSuccess();
 }
 
 function failRequest(req) {
@@ -666,12 +693,12 @@ function createConnection(fromId, toId) {
     else if (t1 === 'compute' && (t2 === 'db' || t2 === 's3')) valid = true;
 
     if (!valid) {
-	new Audio('assets/sounds/click-9.mp3').play();
+        new Audio('assets/sounds/click-9.mp3').play();
         // Using a non-alert message for invalid connections
         console.error("Invalid connection topology: WAF/ALB from Internet -> WAF -> ALB -> Compute -> (RDS/S3)");
         return;
     }
-    
+
     new Audio('assets/sounds/click-5.mp3').play();
 
     from.connections.push(toId);
