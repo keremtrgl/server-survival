@@ -61,5 +61,11 @@ Build your architecture using the toolbar. Each service has a cost and upkeep:
 2.  Open `index.html` in your modern web browser.
 3.  Start building your cloud empire!
 
+
+## 💬 Community
+
+Join our Discord server to discuss strategies and share your high scores:
+[Join Discord](https://discord.gg/bYSktNXy)
+
 ---
 *Built with code and chaos.*
