@@ -56,8 +56,10 @@ let lastMouseX = 0;
 let lastMouseY = 0;
 const panSpeed = 0.1;
 
-function resetGame() {
+function resetGame(mode = 'survival') {
     STATE.sound.init();
+    STATE.sound.playGameBGM();
+    STATE.gameMode = mode;
     STATE.money = CONFIG.survival.startBudget;
     STATE.reputation = 100;
     STATE.requestsProcessed = 0;
@@ -200,6 +202,10 @@ function flashMoney() {
 }
 
 function showMainMenu() {
+    // Ensure sound is initialized if possible (browsers might block until interaction)
+    if (!STATE.sound.ctx) STATE.sound.init();
+    STATE.sound.playMenuBGM();
+
     document.getElementById('main-menu-modal').classList.remove('hidden');
     document.getElementById('faq-modal').classList.add('hidden');
     document.getElementById('modal').classList.add('hidden');
@@ -328,8 +334,24 @@ window.setTimeScale = (s) => {
 window.toggleMute = () => {
     const muted = STATE.sound.toggleMute();
     const icon = document.getElementById('mute-icon');
-    icon.innerText = muted ? '🔇' : '🔊';
-    document.getElementById('tool-mute').classList.toggle('bg-red-900', muted);
+    const menuIcon = document.getElementById('menu-mute-icon');
+
+    const iconText = muted ? '🔇' : '🔊';
+    if (icon) icon.innerText = iconText;
+    if (menuIcon) menuIcon.innerText = iconText;
+
+    const muteBtn = document.getElementById('tool-mute');
+    const menuMuteBtn = document.getElementById('menu-mute-btn'); // We need to add ID to menu button
+
+    if (muted) {
+        muteBtn.classList.add('bg-red-900');
+        muteBtn.classList.add('pulse-green');
+        if (menuMuteBtn) menuMuteBtn.classList.add('pulse-green');
+    } else {
+        muteBtn.classList.remove('bg-red-900');
+        muteBtn.classList.remove('pulse-green');
+        if (menuMuteBtn) menuMuteBtn.classList.remove('pulse-green');
+    }
 };
 
 container.addEventListener('contextmenu', (e) => e.preventDefault());

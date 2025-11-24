@@ -1,11 +1,24 @@
 class SoundService {
     constructor() {
         this.ctx = null;
-        this.muted = false;
+        this.ctx = null;
+        this.muted = true;
         this.masterGain = null;
-        this.bgm = new Audio('assets/sounds/game-background.mp3');
-        this.bgm.loop = true;
-        this.bgm.volume = 0.2;
+        this.masterGain = null;
+        this.gameBgm = new Audio('assets/sounds/game-background.mp3');
+        this.gameBgm.loop = true;
+        this.gameBgm.volume = 0.2;
+
+        this.menuBgm = new Audio('assets/sounds/menu.mp3');
+        this.menuBgm.loop = true;
+        this.menuBgm.volume = 0.3;
+
+        this.currentBgm = null;
+
+        this.sfxHover = new Audio('assets/sounds/click-5.mp3');
+        this.sfxClick = new Audio('assets/sounds/click-9.mp3');
+        this.sfxHover.volume = 0.4;
+        this.sfxClick.volume = 0.5;
     }
 
     init() {
@@ -16,21 +29,67 @@ class SoundService {
         this.masterGain.gain.value = 0.3;
         this.masterGain.connect(this.ctx.destination);
 
-        this.playBGM();
-
         const resumeAudio = () => {
             if (this.ctx.state === 'suspended') this.ctx.resume();
-            if (this.bgm.paused && !this.muted) this.bgm.play().catch(e => console.log("BGM autoplay blocked"));
-            window.removeEventListener('click', resumeAudio);
-            window.removeEventListener('keydown', resumeAudio);
+
+            // Try to play current BGM if set
+            if (this.currentBgm && this.currentBgm.paused && !this.muted) {
+                this.currentBgm.play().catch(e => console.log("BGM autoplay blocked"));
+            }
+
+            // We don't remove the listener immediately because sometimes the first click doesn't fully unlock everything depending on browser
+            // But usually one click is enough. Let's keep it simple.
+            if (this.ctx.state === 'running') {
+                window.removeEventListener('click', resumeAudio);
+                window.removeEventListener('keydown', resumeAudio);
+            }
         };
         window.addEventListener('click', resumeAudio);
         window.addEventListener('keydown', resumeAudio);
     }
 
-    playBGM() {
-        if (this.muted) return;
-        this.bgm.play().catch(e => console.log("Waiting for interaction to play BGM"));
+    playMenuBGM() {
+        this.switchBGM(this.menuBgm);
+    }
+
+    playGameBGM() {
+        this.switchBGM(this.gameBgm);
+    }
+
+    switchBGM(newBgm) {
+        if (this.currentBgm === newBgm) {
+            if (this.currentBgm.paused && !this.muted && this.ctx && this.ctx.state === 'running') {
+                this.currentBgm.play().catch(e => { });
+            }
+            return;
+        }
+
+        if (this.currentBgm) {
+            this.currentBgm.pause();
+            this.currentBgm.currentTime = 0;
+        }
+
+        this.currentBgm = newBgm;
+        if (!this.muted) {
+            // If context is running, play immediately. Otherwise it will be picked up by resumeAudio
+            if (this.ctx && this.ctx.state === 'running') {
+                this.currentBgm.play().catch(e => console.log("Waiting for interaction to play BGM"));
+            }
+        }
+    }
+
+    playMenuHover() {
+        if (!this.muted) {
+            this.sfxHover.currentTime = 0;
+            this.sfxHover.play().catch(() => { });
+        }
+    }
+
+    playMenuClick() {
+        if (!this.muted) {
+            this.sfxClick.currentTime = 0;
+            this.sfxClick.play().catch(() => { });
+        }
     }
 
     toggleMute() {
@@ -40,9 +99,9 @@ class SoundService {
         }
 
         if (this.muted) {
-            this.bgm.pause();
+            if (this.currentBgm) this.currentBgm.pause();
         } else {
-            this.bgm.play().catch(e => { });
+            if (this.currentBgm) this.currentBgm.play().catch(e => { });
         }
 
         return this.muted;
