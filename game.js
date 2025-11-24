@@ -57,6 +57,7 @@ let lastMouseY = 0;
 const panSpeed = 0.1;
 
 function resetGame() {
+    STATE.sound.init();
     STATE.money = CONFIG.survival.startBudget;
     STATE.reputation = 100;
     STATE.requestsProcessed = 0;
