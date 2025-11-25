@@ -10,6 +10,8 @@ scene.fog = new THREE.FogExp2(CONFIG.colors.bg, 0.008);
 const aspect = window.innerWidth / window.innerHeight;
 const d = 50;
 const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+const cameraTarget = new THREE.Vector3(0, 0, 0);
+let isIsometric = true;
 resetCamera()
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -69,11 +71,28 @@ function resetGame(mode = 'survival') {
     STATE.isRunning = true;
     STATE.lastTime = performance.now();
     STATE.timeScale = 0;
+    STATE.currentRPS = 0.5;
+    STATE.spawnTimer = 0;
+
+    // Clear visual elements
+    while (serviceGroup.children.length > 0) {
+        serviceGroup.remove(serviceGroup.children[0]);
+    }
+    while (connectionGroup.children.length > 0) {
+        connectionGroup.remove(connectionGroup.children[0]);
+    }
+    while (requestGroup.children.length > 0) {
+        requestGroup.remove(requestGroup.children[0]);
+    }
+    STATE.internetNode.connections = [];
 
     // Reset UI
     document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('btn-pause').classList.add('active');
     document.getElementById('btn-play').classList.add('pulse-green');
+
+    // Update UI displays
+    updateScoreUI();
 
     // Ensure loop is running
     if (!STATE.animationId) {
@@ -81,7 +100,10 @@ function resetGame(mode = 'survival') {
     }
 }
 
-function restartGame() { resetGame(); }
+function restartGame() {
+    document.getElementById('modal').classList.add('hidden');
+    resetGame();
+}
 
 // Initial setup - show menu, don't start game loop yet
 setTimeout(() => {
@@ -391,16 +413,21 @@ container.addEventListener('mousemove', (e) => {
         const dx = e.clientX - lastMouseX;
         const dy = e.clientY - lastMouseY;
 
-        const panX = -dx * (camera.right - camera.left) / window.innerWidth * panSpeed;
-        const panY = dy * (camera.top - camera.bottom) / window.innerHeight * panSpeed;
+    const panX = -dx * (camera.right - camera.left) / window.innerWidth * panSpeed;
+    const panY = dy * (camera.top - camera.bottom) / window.innerHeight * panSpeed;
 
+    if (isIsometric) {
         camera.position.x += panX;
         camera.position.z += panY;
-
+        cameraTarget.x += panX;
+        cameraTarget.z += panY;
+        camera.lookAt(cameraTarget);
+    } else {
+        camera.position.x += panX;
+        camera.position.z += panY;
         camera.lookAt(camera.position.x, 0, camera.position.z);
-        camera.updateProjectionMatrix();
-
-        lastMouseX = e.clientX;
+    }
+    camera.updateProjectionMatrix();        lastMouseX = e.clientX;
         lastMouseY = e.clientY;
         document.getElementById('tooltip').style.display = 'none';
         return;
@@ -519,10 +546,23 @@ document.addEventListener('keydown', (event) => {
     if (event.key === 'R' || event.key === 'r') {
         resetCamera();
     }
+    if (event.key === 'T' || event.key === 't') {
+        toggleView();
+    }
 });
 
+function toggleView() {
+    isIsometric = !isIsometric;
+    resetCamera();
+}
+
 function resetCamera() {
-    camera.position.set(40, 40, 40);
-    scene.position.set(0, 0, 0);
-    camera.lookAt(scene.position);
+    if (isIsometric) {
+        camera.position.set(40, 40, 40);
+        cameraTarget.set(0, 0, 0);
+        camera.lookAt(cameraTarget);
+    } else {
+        camera.position.set(0, 50, 0);
+        camera.lookAt(0, 0, 0);
+    }
 }

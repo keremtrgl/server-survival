@@ -44,6 +44,8 @@ Build your architecture using the toolbar. Each service has a cost and upkeep:
 ### Controls
 - **Left Click:** Select tools, place services, and connect nodes.
 - **Right Click + Drag:** Pan the camera.
+- **Camera Reset:** Press `R` to reset the camera position.
+- **Birds-Eye View:** Press `T` to switch between isometric and top-down view
 - **Connect Tool:** Click two nodes to create a connection (flow direction matters!).
     - *Valid Flows:* Internet -> WAF -> ALB -> Compute -> (DB/S3)
 - **Delete Tool:** Remove services to recover 50% of the cost.
