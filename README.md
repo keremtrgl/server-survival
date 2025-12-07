@@ -58,12 +58,7 @@ A fully customizable testing environment for experimenting with any architecture
 
 ### Last Features
 - **Sandbox Mode:** Full control over budget, traffic rate, traffic mix, and burst spawning
-- **ESC Menu:** Press ESC to pause and open main menu, Resume to return (stays paused)
-- **Service Upgrades:** Click on **Compute** or **Database** instances with their respective tools to upgrade them.
-    - **Tier 2:** Increased capacity (Cost: $200/$400).
-    - **Tier 3:** Maximum capacity (Cost: $250/$600).
-- **Smart Load Balancing:** ALBs now use **Round Robin** to distribute traffic evenly across all connected instances.
-- **Visual Feedback:** Upgradeable services glow when hovered, and rings indicate their current tier.
+- **Interactive Tutorial:** A guided walkthrough for new players in Survival Mode to learn the basics of building and scaling.
 
 ### Controls
 - **Left Click:** Select tools, place services, and connect nodes.
