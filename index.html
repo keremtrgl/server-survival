@@ -44,11 +44,14 @@
                     <span id="rps-display" class="text-blue-300 font-mono text-sm">0.0 req/s</span>
                 </div>
                 <div class="flex justify-between items-center pt-1">
-                    <span class="text-gray-400 text-sm">TRAFFIC MIX</span>
-                    <div class="flex gap-1 text-xs font-mono">
-                        <span class="text-green-400" id="mix-web">45%</span>
-                        <span class="text-orange-400" id="mix-api">40%</span>
-                        <span class="text-purple-400" id="mix-fraud">15%</span>
+                    <span class="text-gray-400 text-sm">TRAFFIC</span>
+                    <div class="flex gap-1 text-[10px] font-mono">
+                        <span class="text-green-400" id="mix-static" title="Static GET">ST</span>
+                        <span class="text-blue-400" id="mix-read" title="Read GET">RD</span>
+                        <span class="text-orange-400" id="mix-write" title="Write POST">WR</span>
+                        <span class="text-yellow-400" id="mix-upload" title="Upload">UP</span>
+                        <span class="text-cyan-400" id="mix-search" title="Search">SR</span>
+                        <span class="text-red-400" id="mix-malicious" title="Malicious">⚠️</span>
                     </div>
                 </div>
                 <div class="flex justify-between items-center pt-3 border-t border-gray-700 mt-2">
@@ -64,16 +67,16 @@
                 Traffic Score Details</h3>
             <div class="space-y-1 text-sm font-mono">
                 <div class="flex justify-between items-center">
-                    <span class="text-gray-500">WEB (Storage)</span>
-                    <span id="score-web" class="text-gray-300">0</span>
+                    <span class="text-gray-500">Storage (S3)</span>
+                    <span id="score-storage" class="text-emerald-300">0</span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="text-gray-500">API (SQL DB)</span>
-                    <span id="score-api" class="text-gray-300">0</span>
+                    <span class="text-gray-500">Database (SQL)</span>
+                    <span id="score-database" class="text-red-300">0</span>
                 </div>
                 <div class="flex justify-between items-center pt-1 border-t border-gray-800">
-                    <span class="text-purple-300 font-bold">FIREWALL BLOCKED</span>
-                    <span id="score-fraud" class="text-purple-300">0</span>
+                    <span class="text-purple-300 font-bold">ATTACKS BLOCKED</span>
+                    <span id="score-malicious" class="text-purple-300">0</span>
                 </div>
             </div>
         </div>
@@ -166,32 +169,65 @@
             <!-- TRAFFIC MIX -->
             <div class="mb-3">
                 <div class="text-xs text-gray-400 mb-1">Traffic Mix (%)</div>
+                <!-- STATIC -->
                 <div class="flex items-center gap-2 mb-1">
-                    <span class="w-12 text-xs text-green-400">WEB</span>
-                    <input type="range" id="web-slider" min="0" max="100" value="50"
-                        oninput="setTrafficMix('WEB',this.value)"
+                    <span class="w-14 text-xs text-green-400">STATIC</span>
+                    <input type="range" id="static-slider" min="0" max="100" value="30"
+                        oninput="setTrafficMix('STATIC',this.value)"
                         class="flex-1 h-1.5 bg-gray-700 rounded-lg accent-green-500">
-                    <input type="number" id="web-input" value="50" min="0" max="100"
-                        onchange="setTrafficMix('WEB',this.value)"
+                    <input type="number" id="static-input" value="30" min="0" max="100"
+                        onchange="setTrafficMix('STATIC',this.value)"
                         class="w-14 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-green-400 text-xs text-center font-mono">
                 </div>
+                <!-- READ -->
                 <div class="flex items-center gap-2 mb-1">
-                    <span class="w-12 text-xs text-orange-400">API</span>
-                    <input type="range" id="api-slider" min="0" max="100" value="45"
-                        oninput="setTrafficMix('API',this.value)"
+                    <span class="w-14 text-xs text-blue-400">READ</span>
+                    <input type="range" id="read-slider" min="0" max="100" value="20"
+                        oninput="setTrafficMix('READ',this.value)"
+                        class="flex-1 h-1.5 bg-gray-700 rounded-lg accent-blue-500">
+                    <input type="number" id="read-input" value="20" min="0" max="100"
+                        onchange="setTrafficMix('READ',this.value)"
+                        class="w-14 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-blue-400 text-xs text-center font-mono">
+                </div>
+                <!-- WRITE -->
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="w-14 text-xs text-orange-400">WRITE</span>
+                    <input type="range" id="write-slider" min="0" max="100" value="15"
+                        oninput="setTrafficMix('WRITE',this.value)"
                         class="flex-1 h-1.5 bg-gray-700 rounded-lg accent-orange-500">
-                    <input type="number" id="api-input" value="45" min="0" max="100"
-                        onchange="setTrafficMix('API',this.value)"
+                    <input type="number" id="write-input" value="15" min="0" max="100"
+                        onchange="setTrafficMix('WRITE',this.value)"
                         class="w-14 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-orange-400 text-xs text-center font-mono">
                 </div>
+                <!-- UPLOAD -->
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="w-14 text-xs text-yellow-400">UPLOAD</span>
+                    <input type="range" id="upload-slider" min="0" max="100" value="5"
+                        oninput="setTrafficMix('UPLOAD',this.value)"
+                        class="flex-1 h-1.5 bg-gray-700 rounded-lg accent-yellow-500">
+                    <input type="number" id="upload-input" value="5" min="0" max="100"
+                        onchange="setTrafficMix('UPLOAD',this.value)"
+                        class="w-14 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-yellow-400 text-xs text-center font-mono">
+                </div>
+                <!-- SEARCH -->
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="w-14 text-xs text-cyan-400">SEARCH</span>
+                    <input type="range" id="search-slider" min="0" max="100" value="10"
+                        oninput="setTrafficMix('SEARCH',this.value)"
+                        class="flex-1 h-1.5 bg-gray-700 rounded-lg accent-cyan-500">
+                    <input type="number" id="search-input" value="10" min="0" max="100"
+                        onchange="setTrafficMix('SEARCH',this.value)"
+                        class="w-14 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-cyan-400 text-xs text-center font-mono">
+                </div>
+                <!-- MALICIOUS -->
                 <div class="flex items-center gap-2">
-                    <span class="w-12 text-xs text-purple-400">FRAUD</span>
-                    <input type="range" id="fraud-slider" min="0" max="100" value="5"
-                        oninput="setTrafficMix('FRAUD',this.value)"
-                        class="flex-1 h-1.5 bg-gray-700 rounded-lg accent-purple-500">
-                    <input type="number" id="fraud-input" value="5" min="0" max="100"
-                        onchange="setTrafficMix('FRAUD',this.value)"
-                        class="w-14 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-purple-400 text-xs text-center font-mono">
+                    <span class="w-14 text-xs text-red-400">ATTACK</span>
+                    <input type="range" id="malicious-slider" min="0" max="100" value="20"
+                        oninput="setTrafficMix('MALICIOUS',this.value)"
+                        class="flex-1 h-1.5 bg-gray-700 rounded-lg accent-red-500">
+                    <input type="number" id="malicious-input" value="20" min="0" max="100"
+                        onchange="setTrafficMix('MALICIOUS',this.value)"
+                        class="w-14 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-red-400 text-xs text-center font-mono">
                 </div>
             </div>
 
@@ -202,13 +238,21 @@
                     <input type="number" id="burst-input" value="10" min="1" onchange="setBurstCount(this.value)"
                         class="w-16 px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs text-center font-mono">
                 </div>
-                <div class="flex gap-1.5">
-                    <button onclick="spawnBurst('WEB')"
-                        class="flex-1 bg-green-900/50 hover:bg-green-800 text-green-400 text-xs py-1.5 rounded border border-green-700/50">WEB</button>
-                    <button onclick="spawnBurst('API')"
-                        class="flex-1 bg-orange-900/50 hover:bg-orange-800 text-orange-400 text-xs py-1.5 rounded border border-orange-700/50">API</button>
-                    <button onclick="spawnBurst('FRAUD')"
-                        class="flex-1 bg-purple-900/50 hover:bg-purple-800 text-purple-400 text-xs py-1.5 rounded border border-purple-700/50">DDoS</button>
+                <div class="flex gap-1 flex-wrap">
+                    <button onclick="spawnBurst('STATIC')"
+                        class="flex-1 bg-green-900/50 hover:bg-green-800 text-green-400 text-xs py-1.5 rounded border border-green-700/50">STATIC</button>
+                    <button onclick="spawnBurst('READ')"
+                        class="flex-1 bg-blue-900/50 hover:bg-blue-800 text-blue-400 text-xs py-1.5 rounded border border-blue-700/50">READ</button>
+                    <button onclick="spawnBurst('WRITE')"
+                        class="flex-1 bg-orange-900/50 hover:bg-orange-800 text-orange-400 text-xs py-1.5 rounded border border-orange-700/50">WRITE</button>
+                </div>
+                <div class="flex gap-1 flex-wrap mt-1">
+                    <button onclick="spawnBurst('UPLOAD')"
+                        class="flex-1 bg-yellow-900/50 hover:bg-yellow-800 text-yellow-400 text-xs py-1.5 rounded border border-yellow-700/50">UPLOAD</button>
+                    <button onclick="spawnBurst('SEARCH')"
+                        class="flex-1 bg-cyan-900/50 hover:bg-cyan-800 text-cyan-400 text-xs py-1.5 rounded border border-cyan-700/50">SEARCH</button>
+                    <button onclick="spawnBurst('MALICIOUS')"
+                        class="flex-1 bg-red-900/50 hover:bg-red-800 text-red-400 text-xs py-1.5 rounded border border-red-700/50">DDoS</button>
                 </div>
             </div>
         </div>
@@ -226,17 +270,17 @@
                     <span class="w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse"></span>
                     Survive Endless Traffic
                 </li>
-                <li id="goal-web" class="flex items-center">
+                <li id="goal-storage" class="flex items-center">
                     <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-                    Route WEB traffic to File Storage
+                    Route STATIC/UPLOAD → Storage
                 </li>
-                <li id="goal-api" class="flex items-center">
-                    <span class="w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
-                    Route API traffic to Relational DB
+                <li id="goal-db" class="flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                    Route READ/WRITE/SEARCH → Database
                 </li>
                 <li id="goal-waf" class="flex items-center">
                     <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
-                    Block FRAUD traffic with Firewall
+                    Block MALICIOUS with Firewall
                 </li>
             </ul>
         </div>
@@ -350,7 +394,7 @@
                     onclick="setTool('lambda')">
                     <div
                         class="absolute top-0 right-0 bg-green-900/80 text-green-400 text-[9px] px-1 rounded-bl font-mono">
-                        $80</div>
+                        $60</div>
                     <div class="w-4 h-4 bg-orange-500 rounded-full mb-1 shadow-[0_0_10px_rgba(249,115,22,0.6)]"></div>
                     <span class="text-[10px] font-bold mt-1">Compute</span>
                 </button>
@@ -360,7 +404,7 @@
                     onclick="setTool('db')">
                     <div
                         class="absolute top-0 right-0 bg-green-900/80 text-green-400 text-[9px] px-1 rounded-bl font-mono">
-                        $180</div>
+                        $150</div>
                     <div
                         class="w-4 h-4 bg-red-600 rounded-sm mb-1 shadow-[0_0_10px_rgba(220,38,38,0.6)] border-b-2 border-red-800">
                     </div>
@@ -373,7 +417,7 @@
                     onclick="setTool('cache')">
                     <div
                         class="absolute top-0 right-0 bg-green-900/80 text-green-400 text-[9px] px-1 rounded-bl font-mono">
-                        $75</div>
+                        $60</div>
                     <div class="w-4 h-4 bg-red-600 rounded mb-1 shadow-[0_0_10px_rgba(220,56,45,0.6)]"></div>
                     <span class="text-[10px] font-bold mt-1">Cache</span>
                 </button>
@@ -384,7 +428,7 @@
                     onclick="setTool('s3')">
                     <div
                         class="absolute top-0 right-0 bg-green-900/80 text-green-400 text-[9px] px-1 rounded-bl font-mono">
-                        $30</div>
+                        $25</div>
                     <div class="w-4 h-4 bg-emerald-500 rounded-full mb-1 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></div>
                     <span class="text-[10px] font-bold mt-1">Storage</span>
                 </button>
@@ -470,7 +514,7 @@
     <!-- Tutorial Modal (no backdrop - allows interaction with game) -->
     <div id="tutorial-modal" class="fixed inset-0 z-[60] pointer-events-none hidden">
         <!-- Tutorial popup -->
-        <div id="tutorial-popup" class="absolute glass-panel rounded-xl p-6 max-w-md pointer-events-auto border-2 border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+        <div id="tutorial-popup" class="absolute glass-panel rounded-xl p-6 max-w-xl pointer-events-auto border-2 border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
             <div class="flex items-center gap-3 mb-4">
                 <div id="tutorial-icon" class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-cyan-900/50 border border-cyan-500/30"></div>
                 <div>
@@ -529,20 +573,28 @@
                     <h3 class="text-lg font-bold text-blue-400 mb-4">TRAFFIC TYPES</h3>
                     <div class="space-y-3">
                         <div class="bg-gray-800/50 p-3 rounded border border-green-900/50">
-                            <strong class="text-green-400">WEB Traffic</strong>
-                            <p class="text-sm text-gray-400">Route to <span class="text-emerald-400">File Storage</span>
-                                via Load Balancer.</p>
+                            <strong class="text-green-400">STATIC (GET)</strong>
+                            <p class="text-sm text-gray-400">Images, CSS, JS. Route to <span class="text-emerald-400">Storage</span>. 90% cache hit rate.</p>
+                        </div>
+                        <div class="bg-gray-800/50 p-3 rounded border border-blue-900/50">
+                            <strong class="text-blue-400">READ (GET)</strong>
+                            <p class="text-sm text-gray-400">API data fetch. Route to <span class="text-red-400">SQL DB</span>. 40% cache hit rate.</p>
                         </div>
                         <div class="bg-gray-800/50 p-3 rounded border border-orange-900/50">
-                            <strong class="text-orange-400">API Traffic</strong>
-                            <p class="text-sm text-gray-400">Route to <span class="text-red-400">Relational DB</span>
-                                via
-                                Compute.</p>
+                            <strong class="text-orange-400">WRITE (POST/PUT)</strong>
+                            <p class="text-sm text-gray-400">Database writes. Route to <span class="text-red-400">SQL DB</span>. Never cached.</p>
                         </div>
-                        <div class="bg-gray-800/50 p-3 rounded border border-purple-900/50">
-                            <strong class="text-purple-400">FRAUD Traffic</strong>
-                            <p class="text-sm text-gray-400">Block with <span class="text-purple-400">Firewall</span>.
-                            </p>
+                        <div class="bg-gray-800/50 p-3 rounded border border-yellow-900/50">
+                            <strong class="text-yellow-400">UPLOAD (POST)</strong>
+                            <p class="text-sm text-gray-400">File uploads. Route to <span class="text-emerald-400">Storage</span>. Never cached. Heavy processing.</p>
+                        </div>
+                        <div class="bg-gray-800/50 p-3 rounded border border-cyan-900/50">
+                            <strong class="text-cyan-400">SEARCH (GET)</strong>
+                            <p class="text-sm text-gray-400">Complex queries. Route to <span class="text-red-400">SQL DB</span>. 15% cache hit. Heavy processing.</p>
+                        </div>
+                        <div class="bg-gray-800/50 p-3 rounded border border-red-900/50">
+                            <strong class="text-red-400">MALICIOUS</strong>
+                            <p class="text-sm text-gray-400">DDoS & attacks. Block with <span class="text-purple-400">Firewall</span>.</p>
                         </div>
                     </div>
                 </div>
@@ -556,23 +608,22 @@
                                 Fraud ($40)</span>
                         </li>
                         <li class="flex justify-between"><span class="text-orange-500 font-bold">Message Queue</span>
-                            <span>Buffers 200 requests ($40)</span>
+                            <span>Buffers 200 requests ($35)</span>
                         </li>
                         <li class="flex justify-between"><span class="text-blue-400 font-bold">Load Balancer</span>
                             <span>Distributes Traffic ($50)</span>
                         </li>
                         <li class="flex justify-between"><span class="text-orange-400 font-bold">Compute</span>
-                            <span>Processes Requests ($80)</span>
+                            <span>Processes Requests ($60)</span>
                         </li>
                         <li class="flex justify-between"><span class="text-red-400 font-bold">Relational DB</span>
-                            <span>Stores API Data ($180)</span>
+                            <span>Stores API Data ($150)</span>
                         </li>
                         <li class="flex justify-between"><span class="text-red-500 font-bold">Memory Cache</span>
-                            <span>Cache layer ($75)</span>
+                            <span>Cache layer ($60)</span>
                         </li>
                         <li class="flex justify-between"><span class="text-emerald-400 font-bold">File Storage</span>
-                            <span>Stores
-                                Web Data ($30)</span>
+                            <span>Stores Web Data ($25)</span>
                         </li>
                     </ul>
                 </div>

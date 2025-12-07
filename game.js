@@ -25,45 +25,45 @@ function getUpkeepMultiplier() {
     return base + (max - base) * progress;
 }
 
-function updateFraudSpike(dt) {
+function updateMaliciousSpike(dt) {
     if (STATE.gameMode !== 'survival') return;
-    if (!CONFIG.survival.fraudSpike.enabled) return;
+    if (!CONFIG.survival.maliciousSpike.enabled) return;
 
-    STATE.fraudSpikeTimer += dt;
+    STATE.maliciousSpikeTimer += dt;
 
-    const interval = CONFIG.survival.fraudSpike.interval;
-    const duration = CONFIG.survival.fraudSpike.duration;
-    const warning = CONFIG.survival.fraudSpike.warningTime;
+    const interval = CONFIG.survival.maliciousSpike.interval;
+    const duration = CONFIG.survival.maliciousSpike.duration;
+    const warning = CONFIG.survival.maliciousSpike.warningTime;
 
-    const cycleTime = STATE.fraudSpikeTimer % interval;
+    const cycleTime = STATE.maliciousSpikeTimer % interval;
 
     // Warning phase
-    if (cycleTime >= interval - warning && cycleTime < interval - warning + dt && !STATE.fraudSpikeActive) {
-        showFraudWarning();
+    if (cycleTime >= interval - warning && cycleTime < interval - warning + dt && !STATE.maliciousSpikeActive) {
+        showMaliciousWarning();
     }
 
     // Start spike
-    if (cycleTime < dt && STATE.fraudSpikeTimer > warning) {
-        startFraudSpike();
+    if (cycleTime < dt && STATE.maliciousSpikeTimer > warning) {
+        startMaliciousSpike();
     }
 
     // End spike
-    if (STATE.fraudSpikeActive && cycleTime >= duration && cycleTime < duration + dt) {
-        endFraudSpike();
+    if (STATE.maliciousSpikeActive && cycleTime >= duration && cycleTime < duration + dt) {
+        endMaliciousSpike();
     }
 }
 
-function showFraudWarning() {
-    const existing = document.getElementById('fraud-warning');
+function showMaliciousWarning() {
+    const existing = document.getElementById('malicious-warning');
     if (existing) existing.remove();
 
     // Visual warning
     const warning = document.createElement('div');
-    warning.id = 'fraud-warning';
+    warning.id = 'malicious-warning';
     warning.className = 'fixed top-1/3 left-1/2 transform -translate-x-1/2 text-center z-50 pointer-events-none';
     warning.innerHTML = `
         <div class="text-red-500 text-2xl font-bold animate-pulse">⚠️ DDoS INCOMING ⚠️</div>
-        <div class="text-red-300 text-sm">Fraud spike in 5 seconds!</div>
+        <div class="text-red-300 text-sm">Attack spike in 5 seconds!</div>
     `;
     document.body.appendChild(warning);
 
@@ -73,27 +73,31 @@ function showFraudWarning() {
     setTimeout(() => warning.remove(), 4000);
 }
 
-function startFraudSpike() {
-    const existing = document.getElementById('fraud-spike-indicator');
+function startMaliciousSpike() {
+    const existing = document.getElementById('malicious-spike-indicator');
     if (existing) existing.remove();
 
-    STATE.fraudSpikeActive = true;
+    STATE.maliciousSpikeActive = true;
 
     // Store normal distribution
     STATE.normalTrafficDist = { ...STATE.trafficDistribution };
 
-    // Apply spike distribution
-    const fraudPct = CONFIG.survival.fraudSpike.fraudPercent;
-    const remaining = 1 - fraudPct;
+    const maliciousPct = CONFIG.survival.maliciousSpike.maliciousPercent;
+    const remaining = 1 - maliciousPct;
+
+    const otherTotal = 1 - STATE.normalTrafficDist.MALICIOUS;
     STATE.trafficDistribution = {
-        WEB: remaining * 0.5,
-        API: remaining * 0.5,
-        FRAUD: fraudPct
+        STATIC: (STATE.normalTrafficDist.STATIC / otherTotal) * remaining,
+        READ: (STATE.normalTrafficDist.READ / otherTotal) * remaining,
+        WRITE: (STATE.normalTrafficDist.WRITE / otherTotal) * remaining,
+        UPLOAD: (STATE.normalTrafficDist.UPLOAD / otherTotal) * remaining,
+        SEARCH: (STATE.normalTrafficDist.SEARCH / otherTotal) * remaining,
+        MALICIOUS: maliciousPct
     };
 
     // Visual indicator
     const indicator = document.createElement('div');
-    indicator.id = 'fraud-spike-indicator';
+    indicator.id = 'malicious-spike-indicator';
     indicator.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 z-40 pointer-events-none';
     indicator.innerHTML = `
         <div class="bg-red-900/80 border-2 border-red-500 rounded-lg px-4 py-2 animate-pulse">
@@ -103,12 +107,12 @@ function startFraudSpike() {
     document.body.appendChild(indicator);
 
     // Update mix display
-    const fraudEl = document.getElementById('mix-fraud');
-    if (fraudEl) fraudEl.className = 'text-red-500 font-bold animate-pulse';
+    const maliciousEl = document.getElementById('mix-malicious');
+    if (maliciousEl) maliciousEl.className = 'text-red-500 font-bold animate-pulse';
 }
 
-function endFraudSpike() {
-    STATE.fraudSpikeActive = false;
+function endMaliciousSpike() {
+    STATE.maliciousSpikeActive = false;
 
     // Restore normal distribution
     if (STATE.normalTrafficDist) {
@@ -117,12 +121,12 @@ function endFraudSpike() {
     }
 
     // Remove indicator
-    const indicator = document.getElementById('fraud-spike-indicator');
+    const indicator = document.getElementById('malicious-spike-indicator');
     if (indicator) indicator.remove();
 
     // Reset mix display styling
-    const fraudEl = document.getElementById('mix-fraud');
-    if (fraudEl) fraudEl.className = 'text-purple-400';
+    const maliciousEl = document.getElementById('mix-malicious');
+    if (maliciousEl) maliciousEl.className = 'text-red-400';
 
     STATE.sound.playSuccess();
 }
@@ -207,9 +211,12 @@ function resetGame(mode = 'survival') {
         STATE.money = STATE.sandboxBudget;
         STATE.upkeepEnabled = CONFIG.sandbox.upkeepEnabled;
         STATE.trafficDistribution = {
-            WEB: CONFIG.sandbox.trafficDistribution.WEB / 100,
-            API: CONFIG.sandbox.trafficDistribution.API / 100,
-            FRAUD: CONFIG.sandbox.trafficDistribution.FRAUD / 100
+            STATIC: CONFIG.sandbox.trafficDistribution.STATIC / 100,
+            READ: CONFIG.sandbox.trafficDistribution.READ / 100,
+            WRITE: CONFIG.sandbox.trafficDistribution.WRITE / 100,
+            UPLOAD: CONFIG.sandbox.trafficDistribution.UPLOAD / 100,
+            SEARCH: CONFIG.sandbox.trafficDistribution.SEARCH / 100,
+            MALICIOUS: CONFIG.sandbox.trafficDistribution.MALICIOUS / 100
         };
         STATE.burstCount = CONFIG.sandbox.defaultBurstCount;
         STATE.currentRPS = CONFIG.sandbox.defaultRPS;
@@ -225,7 +232,7 @@ function resetGame(mode = 'survival') {
     STATE.services = [];
     STATE.requests = [];
     STATE.connections = [];
-    STATE.score = { total: 0, web: 0, api: 0, fraudBlocked: 0 };
+    STATE.score = { total: 0, storage: 0, database: 0, maliciousBlocked: 0 };
     STATE.isRunning = true;
     STATE.lastTime = performance.now();
     STATE.timeScale = 0;
@@ -234,15 +241,14 @@ function resetGame(mode = 'survival') {
     // Initialize balance overhaul state
     STATE.elapsedGameTime = 0;
     STATE.gameStartTime = performance.now();
-    STATE.fraudSpikeTimer = 0;
-    STATE.fraudSpikeActive = false;
+    STATE.maliciousSpikeTimer = 0;
+    STATE.maliciousSpikeActive = false;
     STATE.normalTrafficDist = null;
 
-    // Remove any leftover fraud spike indicators
-    const fraudWarning = document.getElementById('fraud-warning');
-    if (fraudWarning) fraudWarning.remove();
-    const fraudIndicator = document.getElementById('fraud-spike-indicator');
-    if (fraudIndicator) fraudIndicator.remove();
+    const maliciousWarning = document.getElementById('malicious-warning');
+    if (maliciousWarning) maliciousWarning.remove();
+    const maliciousIndicator = document.getElementById('malicious-spike-indicator');
+    if (maliciousIndicator) maliciousIndicator.remove();
 
     // Clear visual elements
     while (serviceGroup.children.length > 0) {
@@ -291,9 +297,12 @@ function resetGame(mode = 'survival') {
             // Sync sandbox UI controls
             syncInput('budget', STATE.sandboxBudget);
             syncInput('rps', STATE.currentRPS);
-            syncInput('web', STATE.trafficDistribution.WEB * 100);
-            syncInput('api', STATE.trafficDistribution.API * 100);
-            syncInput('fraud', STATE.trafficDistribution.FRAUD * 100);
+            syncInput('static', STATE.trafficDistribution.STATIC * 100);
+            syncInput('read', STATE.trafficDistribution.READ * 100);
+            syncInput('write', STATE.trafficDistribution.WRITE * 100);
+            syncInput('upload', STATE.trafficDistribution.UPLOAD * 100);
+            syncInput('search', STATE.trafficDistribution.SEARCH * 100);
+            syncInput('malicious', STATE.trafficDistribution.MALICIOUS * 100);
             syncInput('burst', STATE.burstCount);
             // Reset upkeep toggle button
             const upkeepBtn = document.getElementById('upkeep-toggle');
@@ -358,12 +367,21 @@ function snapToGrid(vec) {
 
 function getTrafficType() {
     const dist = STATE.trafficDistribution;
-    const total = dist.WEB + dist.API + dist.FRAUD;
-    if (total === 0) return TRAFFIC_TYPES.WEB;
+    const types = Object.keys(dist);
+    const total = types.reduce((sum, type) => sum + (dist[type] || 0), 0);
+    if (total === 0) return TRAFFIC_TYPES.STATIC;
+
     const r = Math.random() * total;
-    if (r < dist.WEB) return TRAFFIC_TYPES.WEB;
-    if (r < dist.WEB + dist.API) return TRAFFIC_TYPES.API;
-    return TRAFFIC_TYPES.FRAUD;
+    let cumulative = 0;
+
+    for (const type of types) {
+        cumulative += dist[type] || 0;
+        if (r < cumulative) {
+            return TRAFFIC_TYPES[type] || type;
+        }
+    }
+
+    return TRAFFIC_TYPES.STATIC;
 }
 
 function spawnRequest() {
@@ -382,27 +400,34 @@ function spawnRequest() {
 
 function updateScore(req, outcome) {
     const points = CONFIG.survival.SCORE_POINTS;
+    const typeConfig = req.typeConfig || CONFIG.trafficTypes[req.type];
 
-    if (outcome === 'FRAUD_BLOCKED') {
-        STATE.score.fraudBlocked += points.FRAUD_BLOCKED_SCORE;
-        STATE.score.total += points.FRAUD_BLOCKED_SCORE;
+    if (outcome === 'MALICIOUS_BLOCKED') {
+        STATE.score.maliciousBlocked += points.MALICIOUS_BLOCKED_SCORE;
+        STATE.score.total += points.MALICIOUS_BLOCKED_SCORE;
         STATE.sound.playFraudBlocked();
-    } else if (req.type === TRAFFIC_TYPES.FRAUD && outcome === 'FRAUD_PASSED') {
-        STATE.reputation += points.FRAUD_PASSED_REPUTATION;
-        console.warn(`FRAUD PASSED: ${points.FRAUD_PASSED_REPUTATION} Rep. (Critical Failure)`);
+    } else if (req.type === TRAFFIC_TYPES.MALICIOUS && outcome === 'MALICIOUS_PASSED') {
+        STATE.reputation += points.MALICIOUS_PASSED_REPUTATION;
+        console.warn(`MALICIOUS PASSED: ${points.MALICIOUS_PASSED_REPUTATION} Rep. (Critical Failure)`);
     } else if (outcome === 'COMPLETED') {
-        if (req.type === TRAFFIC_TYPES.WEB) {
-            STATE.score.web += points.WEB_SCORE;
-            STATE.score.total += points.WEB_SCORE;
-            STATE.money += points.WEB_REWARD;
-        } else if (req.type === TRAFFIC_TYPES.API) {
-            STATE.score.api += points.API_SCORE;
-            STATE.score.total += points.API_SCORE;
-            STATE.money += points.API_REWARD;
+        let reward = typeConfig.reward;
+        const score = typeConfig.score;
+
+        if (req.cached) {
+            reward *= (1 + points.CACHE_HIT_BONUS);
         }
+
+        if (typeConfig.destination === 's3') {
+            STATE.score.storage += score;
+        } else if (typeConfig.destination === 'db') {
+            STATE.score.database += score;
+        }
+
+        STATE.score.total += score;
+        STATE.money += reward;
     } else if (outcome === 'FAILED') {
         STATE.reputation += points.FAIL_REPUTATION;
-        STATE.score.total -= (req.type === TRAFFIC_TYPES.API ? points.API_SCORE : points.WEB_SCORE) / 2;
+        STATE.score.total -= (typeConfig.score || 5) / 2;
     }
 
     updateScoreUI();
@@ -415,7 +440,7 @@ function finishRequest(req) {
 }
 
 function failRequest(req) {
-    const failType = req.type === TRAFFIC_TYPES.FRAUD ? 'FRAUD_PASSED' : 'FAILED';
+    const failType = req.type === TRAFFIC_TYPES.MALICIOUS ? 'MALICIOUS_PASSED' : 'FAILED';
     updateScore(req, failType);
     STATE.sound.playFail();
     req.mesh.material.color.setHex(CONFIG.colors.requestFail);
@@ -429,9 +454,9 @@ function removeRequest(req) {
 
 function updateScoreUI() {
     document.getElementById('total-score-display').innerText = STATE.score.total;
-    document.getElementById('score-web').innerText = STATE.score.web;
-    document.getElementById('score-api').innerText = STATE.score.api;
-    document.getElementById('score-fraud').innerText = STATE.score.fraudBlocked;
+    document.getElementById('score-storage').innerText = STATE.score.storage;
+    document.getElementById('score-database').innerText = STATE.score.database;
+    document.getElementById('score-malicious').innerText = STATE.score.maliciousBlocked;
 }
 
 function flashMoney() {
@@ -486,8 +511,7 @@ window.startGame = () => {
     document.getElementById('main-menu-modal').classList.add('hidden');
     resetGame();
 
-    // Start tutorial for new players in survival mode
-    if (window.tutorial && !window.tutorial.isCompleted()) {
+    if (window.tutorial) {
         setTimeout(() => {
             window.tutorial.start();
         }, 500);
@@ -1055,8 +1079,7 @@ function animate(time) {
         }
     }
 
-    // Update fraud spike system
-    updateFraudSpike(dt);
+    updateMaliciousSpike(dt);
 
     document.getElementById('money-display').innerText = `$${Math.floor(STATE.money)}`;
 
@@ -1074,14 +1097,20 @@ function animate(time) {
         }
     }
 
-    // Update traffic mix display
     if (STATE.gameMode === 'survival') {
-        const webEl = document.getElementById('mix-web');
-        const apiEl = document.getElementById('mix-api');
-        const fraudEl = document.getElementById('mix-fraud');
-        if (webEl) webEl.textContent = Math.round(STATE.trafficDistribution.WEB * 100) + '%';
-        if (apiEl) apiEl.textContent = Math.round(STATE.trafficDistribution.API * 100) + '%';
-        if (fraudEl && !STATE.fraudSpikeActive) fraudEl.textContent = Math.round(STATE.trafficDistribution.FRAUD * 100) + '%';
+        const staticEl = document.getElementById('mix-static');
+        const readEl = document.getElementById('mix-read');
+        const writeEl = document.getElementById('mix-write');
+        const uploadEl = document.getElementById('mix-upload');
+        const searchEl = document.getElementById('mix-search');
+        const maliciousEl = document.getElementById('mix-malicious');
+
+        if (staticEl) staticEl.textContent = Math.round((STATE.trafficDistribution.STATIC || 0) * 100) + '%';
+        if (readEl) readEl.textContent = Math.round((STATE.trafficDistribution.READ || 0) * 100) + '%';
+        if (writeEl) writeEl.textContent = Math.round((STATE.trafficDistribution.WRITE || 0) * 100) + '%';
+        if (uploadEl) uploadEl.textContent = Math.round((STATE.trafficDistribution.UPLOAD || 0) * 100) + '%';
+        if (searchEl) searchEl.textContent = Math.round((STATE.trafficDistribution.SEARCH || 0) * 100) + '%';
+        if (maliciousEl && !STATE.maliciousSpikeActive) maliciousEl.textContent = Math.round((STATE.trafficDistribution.MALICIOUS || 0) * 100) + '%';
     }
 
     STATE.reputation = Math.min(100, STATE.reputation);
@@ -1288,7 +1317,7 @@ window.saveGameState = () => {
     try {
         const saveData = {
             timestamp: Date.now(),
-            version: '1.0',
+            version: '2.0',
             ...STATE,
             score: { ...STATE.score },
             trafficDistribution: { ...STATE.trafficDistribution },
@@ -1326,6 +1355,45 @@ window.saveGameState = () => {
     }
 };
 
+function migrateOldSave(saveData) {
+    if (saveData.trafficDistribution) {
+        const oldDist = saveData.trafficDistribution;
+        if ('WEB' in oldDist || 'API' in oldDist || 'FRAUD' in oldDist) {
+            saveData.trafficDistribution = {
+                STATIC: oldDist.WEB || 0,
+                READ: (oldDist.API || 0) * 0.5,
+                WRITE: (oldDist.API || 0) * 0.3,
+                UPLOAD: 0.05,
+                SEARCH: (oldDist.API || 0) * 0.2,
+                MALICIOUS: oldDist.FRAUD || 0
+            };
+        }
+    }
+
+    if (saveData.score) {
+        const oldScore = saveData.score;
+        if ('web' in oldScore || 'api' in oldScore || 'fraudBlocked' in oldScore) {
+            saveData.score = {
+                total: oldScore.total || 0,
+                storage: oldScore.web || 0,
+                database: oldScore.api || 0,
+                maliciousBlocked: oldScore.fraudBlocked || 0
+            };
+        }
+    }
+
+    if ('fraudSpikeTimer' in saveData) {
+        saveData.maliciousSpikeTimer = saveData.fraudSpikeTimer;
+        delete saveData.fraudSpikeTimer;
+    }
+    if ('fraudSpikeActive' in saveData) {
+        saveData.maliciousSpikeActive = saveData.fraudSpikeActive;
+        delete saveData.fraudSpikeActive;
+    }
+
+    return saveData;
+}
+
 window.loadGameState = () => {
     try {
         const saveDataStr = localStorage.getItem('serverSurvivalSave');
@@ -1334,14 +1402,18 @@ window.loadGameState = () => {
             return;
         }
 
-        const saveData = JSON.parse(saveDataStr);
+        let saveData = JSON.parse(saveDataStr);
+
+        if (!saveData.version || saveData.version === '1.0') {
+            saveData = migrateOldSave(saveData);
+        }
 
         clearCurrentGame();
 
         STATE.money = saveData.money || 0;
         STATE.reputation = saveData.reputation || 100;
         STATE.requestsProcessed = saveData.requestsProcessed || 0;
-        STATE.score = { ...saveData.score } || { total: 0, web: 0, api: 0, fraudBlocked: 0 };
+        STATE.score = { ...saveData.score } || { total: 0, storage: 0, database: 0, maliciousBlocked: 0 };
         STATE.activeTool = saveData.activeTool || 'select';
         STATE.selectedNodeId = saveData.selectedNodeId || null;
         STATE.lastTime = performance.now(); // Reset timing
@@ -1355,7 +1427,9 @@ window.loadGameState = () => {
         STATE.gameMode = saveData.gameMode || 'survival';
         STATE.sandboxBudget = saveData.sandboxBudget || 2000;
         STATE.upkeepEnabled = saveData.upkeepEnabled !== false;
-        STATE.trafficDistribution = { ...saveData.trafficDistribution } || { WEB: 0.5, API: 0.45, FRAUD: 0.05 };
+        STATE.trafficDistribution = { ...saveData.trafficDistribution } || {
+            STATIC: 0.30, READ: 0.20, WRITE: 0.15, UPLOAD: 0.05, SEARCH: 0.10, MALICIOUS: 0.20
+        };
         STATE.burstCount = saveData.burstCount || 10;
         STATE.gameStarted = saveData.gameStarted || true;
         STATE.previousTimeScale = saveData.previousTimeScale || 1;
@@ -1377,9 +1451,12 @@ window.loadGameState = () => {
             if (objectivesPanel) objectivesPanel.classList.add('hidden');
             syncInput('budget', STATE.sandboxBudget);
             syncInput('rps', STATE.currentRPS);
-            syncInput('web', STATE.trafficDistribution.WEB * 100);
-            syncInput('api', STATE.trafficDistribution.API * 100);
-            syncInput('fraud', STATE.trafficDistribution.FRAUD * 100);
+            syncInput('static', (STATE.trafficDistribution.STATIC || 0) * 100);
+            syncInput('read', (STATE.trafficDistribution.READ || 0) * 100);
+            syncInput('write', (STATE.trafficDistribution.WRITE || 0) * 100);
+            syncInput('upload', (STATE.trafficDistribution.UPLOAD || 0) * 100);
+            syncInput('search', (STATE.trafficDistribution.SEARCH || 0) * 100);
+            syncInput('malicious', (STATE.trafficDistribution.MALICIOUS || 0) * 100);
             syncInput('burst', STATE.burstCount);
             const upkeepBtn = document.getElementById('upkeep-toggle');
             if (upkeepBtn) {

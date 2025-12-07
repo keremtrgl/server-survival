@@ -1,15 +1,12 @@
 class Request {
     constructor(type) {
         this.id = Math.random().toString(36);
-        this.value = 10;
         this.type = type;
+        this.typeConfig = CONFIG.trafficTypes[type];
+        this.value = this.typeConfig.reward;
+        this.cached = false;
 
-        let color;
-        switch (this.type) {
-            case TRAFFIC_TYPES.WEB: color = CONFIG.colors.requestWeb; break;
-            case TRAFFIC_TYPES.API: color = CONFIG.colors.requestApi; break;
-            case TRAFFIC_TYPES.FRAUD: color = CONFIG.colors.requestFraud; break;
-        }
+        const color = this.typeConfig.color;
 
         const geo = new THREE.SphereGeometry(0.4, 8, 8);
         const mat = new THREE.MeshBasicMaterial({ color: color });
@@ -24,6 +21,22 @@ class Request {
         this.origin.y = 2;
         this.progress = 0;
         this.isMoving = false;
+    }
+
+    get isCacheable() {
+        return this.typeConfig.cacheable && !this.cached;
+    }
+
+    get cacheHitRate() {
+        return this.typeConfig.cacheHitRate;
+    }
+
+    get destination() {
+        return this.typeConfig.destination;
+    }
+
+    get processingWeight() {
+        return this.typeConfig.processingWeight;
     }
 
     flyTo(service) {

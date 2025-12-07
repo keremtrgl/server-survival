@@ -8,12 +8,34 @@ const TUTORIAL_STEPS = [
         icon: '👋',
         highlight: null,
         action: 'next',
+        position: 'center',
         hint: 'Traffic will start flowing once you press Play. First, let\'s prepare your defenses!'
+    },
+    {
+        id: 'traffic-types',
+        title: 'HTTP Traffic Types',
+        text: '<div class="space-y-2 text-left text-sm">' +
+              '<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-400 inline-block"></span><span class="text-green-400 font-bold w-16">STATIC</span><span class="text-gray-300">GET request • Images, CSS, JS files → <span class="text-emerald-400">Storage</span></span></div>' +
+              '<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-400 inline-block"></span><span class="text-blue-400 font-bold w-16">READ</span><span class="text-gray-300">GET request • Fetch user data, API calls → <span class="text-red-400">Database</span></span></div>' +
+              '<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-orange-400 inline-block"></span><span class="text-orange-400 font-bold w-16">WRITE</span><span class="text-gray-300">POST/PUT • Create/update records → <span class="text-red-400">Database</span></span></div>' +
+              '<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span><span class="text-yellow-400 font-bold w-16">UPLOAD</span><span class="text-gray-300">POST+file • User uploads, media → <span class="text-emerald-400">Storage</span></span></div>' +
+              '<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-cyan-400 inline-block"></span><span class="text-cyan-400 font-bold w-16">SEARCH</span><span class="text-gray-300">GET+query • Full-text search, filters → <span class="text-red-400">Database</span></span></div>' +
+              '<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-400 inline-block"></span><span class="text-red-400 font-bold w-16">ATTACK</span><span class="text-gray-300">DDoS, SQL injection, bots → <span class="text-purple-400">Block with Firewall!</span></span></div>' +
+              '</div>' +
+              '<div class="mt-3 pt-2 border-t border-gray-700 text-xs text-gray-400">' +
+              '<div class="flex justify-between"><span>Cache reduces DB/Storage load:</span><span>STATIC 90% • READ 40% • SEARCH 15%</span></div>' +
+              '<div class="flex justify-between"><span>Heavy processing (slower):</span><span>UPLOAD 2× • SEARCH 2.5×</span></div>' +
+              '</div>',
+        icon: '🌐',
+        highlight: null,
+        action: 'next',
+        position: 'center',
+        hint: 'Real backends handle these exact request types! Route them to the correct destination to earn rewards.'
     },
     {
         id: 'place-firewall',
         title: 'Deploy Firewall',
-        text: 'The <span class="text-purple-400 font-bold">Firewall</span> is your first line of defense. It blocks malicious FRAUD traffic that can destroy your reputation. Click the FW button, then click on the grid to place it.',
+        text: 'The <span class="text-purple-400 font-bold">Firewall</span> is your first line of defense. It blocks <span class="text-red-400">MALICIOUS</span> traffic (red) that can destroy your reputation. Click the FW button, then click on the grid to place it.',
         icon: '🛡️',
         highlight: 'tool-waf',
         action: 'place_waf',
@@ -44,16 +66,16 @@ const TUTORIAL_STEPS = [
         icon: '🔗',
         highlight: 'tool-connect',
         action: 'connect_waf_alb',
-        hint: 'Traffic flow: Internet → Firewall (blocks FRAUD) → Load Balancer → ...'
+        hint: 'Traffic flow: Internet → Firewall (blocks MALICIOUS) → Load Balancer → ...'
     },
     {
         id: 'place-compute',
         title: 'Deploy Compute Server',
-        text: '<span class="text-orange-400 font-bold">Compute</span> processes all requests. It\'s the brain of your infrastructure that routes WEB and API traffic to the correct storage.',
+        text: '<span class="text-orange-400 font-bold">Compute</span> processes all requests. It routes traffic to the correct destination: <span class="text-emerald-400">Storage</span> for STATIC/UPLOAD, <span class="text-red-400">Database</span> for READ/WRITE/SEARCH.',
         icon: '⚡',
         highlight: 'tool-lambda',
         action: 'place_compute',
-        hint: 'You can upgrade Compute later to handle more traffic (Tier 1 → 2 → 3).'
+        hint: 'You can upgrade Compute later to handle more traffic (Tier 1 → 2 → 3). Heavy requests like UPLOAD and SEARCH take longer to process.'
     },
     {
         id: 'connect-lb-compute',
@@ -67,20 +89,20 @@ const TUTORIAL_STEPS = [
     {
         id: 'place-storage',
         title: 'Deploy File Storage',
-        text: '<span class="text-emerald-400 font-bold">File Storage</span> handles WEB traffic (green requests). Without it, WEB requests will fail!',
+        text: '<span class="text-emerald-400 font-bold">File Storage</span> handles <span class="text-green-400">STATIC</span> (green) and <span class="text-yellow-400">UPLOAD</span> (yellow) traffic. Without it, these requests will fail!',
         icon: '📁',
         highlight: 'tool-s3',
         action: 'place_s3',
-        hint: 'WEB traffic = static files, images, HTML pages.'
+        hint: 'STATIC = images, CSS, JS files (90% cache hit rate). UPLOAD = file uploads (heavy, never cached).'
     },
     {
         id: 'place-db',
         title: 'Deploy SQL Database',
-        text: '<span class="text-red-400 font-bold">SQL Database</span> handles API traffic (orange requests). APIs need database storage to function.',
+        text: '<span class="text-red-400 font-bold">SQL Database</span> handles <span class="text-blue-400">READ</span>, <span class="text-orange-400">WRITE</span>, and <span class="text-cyan-400">SEARCH</span> traffic. APIs need database storage.',
         icon: '🗄️',
         highlight: 'tool-db',
         action: 'place_db',
-        hint: 'API traffic = dynamic data, user requests, business logic.'
+        hint: 'READ = data fetch (40% cache). WRITE = database updates (never cached). SEARCH = complex queries (15% cache, heavy).'
     },
     {
         id: 'connect-compute-storage',
@@ -89,7 +111,7 @@ const TUTORIAL_STEPS = [
         icon: '🔗',
         highlight: 'tool-connect',
         action: 'connect_compute_s3',
-        hint: 'Compute automatically routes WEB traffic to File Storage.'
+        hint: 'Compute automatically routes STATIC and UPLOAD traffic to File Storage.'
     },
     {
         id: 'connect-compute-db',
@@ -98,7 +120,7 @@ const TUTORIAL_STEPS = [
         icon: '🔗',
         highlight: 'tool-connect',
         action: 'connect_compute_db',
-        hint: 'Compute automatically routes API traffic to SQL Database.'
+        hint: 'Compute automatically routes READ, WRITE, and SEARCH traffic to SQL Database.'
     },
     {
         id: 'ready',
@@ -112,10 +134,16 @@ const TUTORIAL_STEPS = [
     {
         id: 'complete',
         title: 'Tutorial Complete!',
-        text: '<span class="text-green-400">Congratulations!</span> You now know the basics. Remember:<br><br>• <span class="text-purple-400">Purple</span> FRAUD → Block with Firewall<br>• <span class="text-green-400">Green</span> WEB → Route to File Storage<br>• <span class="text-orange-400">Orange</span> API → Route to SQL Database<br><br>Good luck, Architect!',
+        text: '<span class="text-green-400">Congratulations!</span> You now know the basics. Remember:<br><br>' +
+              '• <span class="text-red-400">Red</span> MALICIOUS → Block with Firewall<br>' +
+              '• <span class="text-green-400">Green</span> STATIC / <span class="text-yellow-400">Yellow</span> UPLOAD → Route to Storage<br>' +
+              '• <span class="text-blue-400">Blue</span> READ / <span class="text-orange-400">Orange</span> WRITE / <span class="text-cyan-400">Cyan</span> SEARCH → Route to SQL DB<br>' +
+              '• Cache helps STATIC (90%), READ (40%), SEARCH (15%)<br><br>' +
+              'Good luck, Architect!',
         icon: '🎉',
         highlight: null,
         action: 'finish',
+        position: 'center',
         hint: 'Don\'t worry if your budget goes negative at first! Just like real infrastructure - you invest upfront, then profit comes from processed traffic. Each completed request earns money!'
     }
 ];
@@ -160,10 +188,6 @@ class Tutorial {
     }
 
     start() {
-        if (this.isCompleted()) {
-            return false;
-        }
-
         this.isActive = true;
         this.currentStep = 0;
         this.completedActions.clear();
@@ -225,7 +249,7 @@ class Tutorial {
     }
 
     positionPopup(step) {
-        if (step.id === 'welcome') {
+        if (step.position === 'center') {
             this.popup.style.right = 'auto';
             this.popup.style.bottom = 'auto';
             this.popup.style.left = '50%';

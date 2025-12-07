@@ -5,9 +5,9 @@ const STATE = {
 
     score: {
         total: 0,
-        web: 0,
-        api: 0,
-        fraudBlocked: 0
+        storage: 0,
+        database: 0,
+        maliciousBlocked: 0
     },
 
     activeTool: 'select',
@@ -40,7 +40,14 @@ const STATE = {
     gameMode: 'survival',
     sandboxBudget: 2000,
     upkeepEnabled: true,
-    trafficDistribution: { WEB: 0.5, API: 0.45, FRAUD: 0.05 },
+    trafficDistribution: {
+        STATIC: 0.30,
+        READ: 0.20,
+        WRITE: 0.15,
+        UPLOAD: 0.05,
+        SEARCH: 0.10,
+        MALICIOUS: 0.20
+    },
     burstCount: 10,
 
     // Menu state
@@ -50,7 +57,7 @@ const STATE = {
     // Balance overhaul state
     gameStartTime: 0,
     elapsedGameTime: 0,
-    fraudSpikeTimer: 0,
-    fraudSpikeActive: false,
+    maliciousSpikeTimer: 0,
+    maliciousSpikeActive: false,
     normalTrafficDist: null
 };

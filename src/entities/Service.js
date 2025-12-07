@@ -131,14 +131,30 @@ class Service {
         while (this.processing.length < this.config.capacity && this.queue.length > 0) {
             const req = this.queue.shift();
 
-            if (this.type === 'waf' && req.type === TRAFFIC_TYPES.FRAUD) {
-                updateScore(req, 'FRAUD_BLOCKED');
+            if (this.type === 'waf' && req.type === TRAFFIC_TYPES.MALICIOUS) {
+                updateScore(req, 'MALICIOUS_BLOCKED');
                 req.destroy();
                 continue;
             }
 
             this.processing.push({ req: req, timer: 0 });
         }
+    }
+
+    findConnectedService(serviceType) {
+        return STATE.services.find(s =>
+            this.connections.includes(s.id) && s.type === serviceType
+        );
+    }
+
+    forwardToDestination(req) {
+        const destType = req.destination;
+        const target = this.findConnectedService(destType);
+        if (target) {
+            req.flyTo(target);
+            return true;
+        }
+        return false;
     }
 
     update(dt) {
@@ -151,9 +167,14 @@ class Service {
 
         for (let i = this.processing.length - 1; i >= 0; i--) {
             let job = this.processing[i];
+
+            const processingTime = this.type === 'compute'
+                ? this.config.processingTime * job.req.processingWeight
+                : this.config.processingTime;
+
             job.timer += dt * 1000;
 
-            if (job.timer >= this.config.processingTime) {
+            if (job.timer >= processingTime) {
                 this.processing.splice(i, 1);
 
                 const failChance = calculateFailChanceBasedOnLoad(this.totalLoad);
@@ -162,9 +183,8 @@ class Service {
                     continue;
                 }
 
-                if (this.type === 'db' || this.type === 's3') {
-                    const expectedType = this.type === 'db' ? TRAFFIC_TYPES.API : TRAFFIC_TYPES.WEB;
-                    if (job.req.type === expectedType) {
+                if (this.type === 'db') {
+                    if (job.req.destination === 'db') {
                         finishRequest(job.req);
                     } else {
                         failRequest(job.req);
@@ -172,34 +192,35 @@ class Service {
                     continue;
                 }
 
-                // Cache processing logic
-                if (this.type === 'cache') {
-                    const hitRate = this.config.cacheHitRate || 0.35;
-
-                    if (Math.random() < hitRate) {
-                        // CACHE HIT - request completes here
-                        STATE.sound.playSuccess();
-                        this.flashCacheHit();
+                if (this.type === 's3') {
+                    if (job.req.destination === 's3') {
                         finishRequest(job.req);
                     } else {
-                        // CACHE MISS - forward to DB or S3
-                        const requiredType = job.req.type === TRAFFIC_TYPES.API ? 'db' :
-                            (job.req.type === TRAFFIC_TYPES.WEB ? 's3' : null);
+                        failRequest(job.req);
+                    }
+                    continue;
+                }
 
-                        if (requiredType) {
-                            const target = STATE.services.find(s =>
-                                this.connections.includes(s.id) && s.type === requiredType
-                            );
+                if (this.type === 'cache') {
+                    if (job.req.isCacheable) {
+                        const hitRate = job.req.cacheHitRate;
 
-                            if (target) {
-                                job.req.flyTo(target);
-                            } else {
-                                failRequest(job.req);
-                            }
-                        } else {
-                            // FRAUD should never reach cache
-                            failRequest(job.req);
+                        if (Math.random() < hitRate) {
+                            job.req.cached = true;
+                            STATE.sound.playSuccess();
+                            this.flashCacheHit();
+                            finishRequest(job.req);
+                            continue;
                         }
+                    }
+
+                    const destType = job.req.destination;
+                    const target = this.findConnectedService(destType);
+
+                    if (target) {
+                        job.req.flyTo(target);
+                    } else {
+                        failRequest(job.req);
                     }
                     continue;
                 }
@@ -242,35 +263,28 @@ class Service {
                 }
 
                 if (this.type === 'compute') {
-                    const requiredEndpoint = job.req.type === TRAFFIC_TYPES.API ? 'db' :
-                        (job.req.type === TRAFFIC_TYPES.WEB ? 's3' : null);
+                    const destType = job.req.destination;
 
-                    if (requiredEndpoint) {
-                        // Check if cache is connected (preferred path)
-                        const cacheTarget = STATE.services.find(s =>
-                            this.connections.includes(s.id) && s.type === 'cache'
-                        );
+                    if (destType === 'blocked') {
+                        failRequest(job.req);
+                        continue;
+                    }
 
+                    if (job.req.isCacheable) {
+                        const cacheTarget = this.findConnectedService('cache');
                         if (cacheTarget) {
-                            // Route through cache
                             job.req.flyTo(cacheTarget);
-                        } else {
-                            // Direct to DB/S3 (existing logic)
-                            const directTarget = STATE.services.find(s =>
-                                this.connections.includes(s.id) && s.type === requiredEndpoint
-                            );
-
-                            if (directTarget) {
-                                job.req.flyTo(directTarget);
-                            } else {
-                                failRequest(job.req);
-                            }
+                            continue;
                         }
+                    }
+
+                    const directTarget = this.findConnectedService(destType);
+                    if (directTarget) {
+                        job.req.flyTo(directTarget);
                     } else {
                         failRequest(job.req);
                     }
                 } else {
-                    // Round Robin Load Balancing
                     const candidates = this.connections
                         .map(id => STATE.services.find(s => s.id === id))
                         .filter(s => s !== undefined);
