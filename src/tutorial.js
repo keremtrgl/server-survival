@@ -367,9 +367,7 @@ class Tutorial {
     }
 
     skip() {
-        if (confirm('Skip tutorial? You can always read the Manual (?) for help.')) {
-            this.complete();
-        }
+        this.complete();
     }
 
     complete() {
