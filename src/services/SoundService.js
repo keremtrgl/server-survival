@@ -106,7 +106,8 @@ class SoundService {
     }
 
     playTone(freq, type, duration, startTime = 0) {
-        if (!this.ctx || this.muted) return;
+        // Also check if audio context is in running state
+        if (!this.ctx || this.muted || this.ctx.state !== 'running') return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
