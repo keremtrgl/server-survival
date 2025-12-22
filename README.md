@@ -19,12 +19,8 @@ Survive as long as possible! Manage your **Budget ($)**, **Reputation (%)**, and
 
 | Traffic       | Color  | Destination | Reward | Description                            |
 | :------------ | :----- | :---------- | :----- | :------------------------------------- |
-| **STATIC**    | Green  | Storage     | $0.50  | Static file requests (images, CSS, JS) |
+| **STATIC**    | Green  | CDN / Storage | $0.50  | Static file requests (images, CSS, JS) |
 | **READ**      | Blue   | SQL DB      | $0.80  | Database read operations               |
-| **WRITE**     | Orange | SQL DB      | $1.20  | Database write operations              |
-| **UPLOAD**    | Yellow | Storage     | $1.50  | File uploads                           |
-| **SEARCH**    | Cyan   | SQL DB      | $0.80  | Search queries (CPU intensive)         |
-| **MALICIOUS** | Red    | Firewall    | $0.50  | DDoS/Attack traffic - must be blocked! |
 
 ### Infrastructure & Services
 
@@ -36,6 +32,7 @@ Build your architecture using the toolbar. Each service has a cost, capacity, an
 | **Queue**    | $40  | Queue:200 | Low       | **Buffer.** Buffers requests during spikes. Prevents drops.        |
 | **Load Balancer**| $50  | 20        | Medium    | **Distribution.** Distributes traffic to multiple instances.      |
 | **Compute**  | $60  | 4         | High      | **Processing.** Processes requests. **Upgradeable T1→T3.**         |
+| **CDN**      | $60  | 50        | Low       | **Delivery.** Caches STATIC content at edge (95% hit rate).        |
 | **Cache**    | $60  | 30        | Medium    | **Caching.** Caches responses to reduce DB load.                   |
 | **SQL DB**   | $150 | 8         | Very High | **Database.** Destination for READ/WRITE/SEARCH. **Upgradeable T1→T3.** |
 | **Storage**  | $25  | 25        | Low       | **File System.** Destination for STATIC/UPLOAD traffic.            |
@@ -76,12 +73,12 @@ The core experience - survive as long as possible against escalating traffic wit
 
 **New UI Features:**
 
-- Health bars on all services
-- Active event indicator bar at top
-- Detailed finances panel (income/expenses breakdown)
-- Service health panel with repair costs
-- Auto-repair toggle
-- Game over analysis with tips
+- **Health bars on all services**
+- **Active event indicator bar at top**
+- **Detailed finances panel (income/expenses breakdown)**
+- **Service health panel with repair costs**
+- **Auto-repair toggle**
+- **Game over analysis with tips**
 
 #### Sandbox Mode
 
@@ -120,19 +117,20 @@ A fully customizable testing environment for experimenting with any architecture
 - **Birds-Eye View:** Press `T` to switch between isometric and top-down view.
 - **Hide HUD:** Press `H` to toggle UI panels.
 - **Connect Tool:** Click two nodes to create a connection (flow direction matters!).
-  - _Valid Flows:_ Internet -> Firewall -> Load Balancer -> Queue -> Compute -> Cache -> (SQL DB/Storage)
+  - _Valid Flows:_ Internet -> (Firewall/CDN) -> Load Balancer -> Queue -> Compute -> Cache -> (SQL DB/Storage)
 - **Delete Tool:** Remove services to recover 50% of the cost.
 - **Time Controls:** Pause, Play (1x), and Fast Forward (3x).
 
 ## Strategy Tips
 
 1.  **Block Attacks First:** Always place a Firewall immediately connected to the Internet. Malicious leaks destroy reputation fast (-5 per leak).
-2.  **Watch Service Health:** Damaged services have reduced capacity. Click to repair or enable Auto-Repair.
-3.  **Scale for Traffic Surges:** RPS multiplies at milestones - prepare before ×2.0 at 3 minutes!
-4.  **Balance Income vs Upkeep:** Start lean, scale as income grows. Over-provisioning leads to bankruptcy.
-5.  **Use Cache Wisely:** Reduces database load significantly for READ requests.
-6.  **Buffer with Queue:** Queue helps survive traffic burst events without dropping requests.
-7.  **React to Events:** Watch the event bar - cost spikes mean hold off on purchases, traffic bursts mean ensure capacity.
+2.  **Use CDN for Static Content:** Connect Internet -> CDN -> Storage. The CDN handles 95% of static traffic cheaply!
+3.  **Watch Service Health:** Damaged services have reduced capacity. Click to repair or enable Auto-Repair.
+4.  **Scale for Traffic Surges:** RPS multiplies at milestones - prepare before ×2.0 at 3 minutes!
+5.  **Balance Income vs Upkeep:** Start lean, scale as income grows. Over-provisioning leads to bankruptcy.
+6.  **Use Cache Wisely:** Reduces database load significantly for READ requests.
+7.  **Buffer with Queue:** Queue helps survive traffic burst events without dropping requests.
+8.  **React to Events:** Watch the event bar - cost spikes mean hold off on purchases, traffic bursts mean ensure capacity.
 
 ## Tech Stack
 
