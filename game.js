@@ -20,13 +20,13 @@ function formatTime(totalSeconds) {
 // ==================== BALANCE OVERHAUL FUNCTIONS ====================
 
 function calculateTargetRPS(gameTimeSeconds) {
-    
+
     const base = CONFIG.survival.baseRPS;
     const logGrowth = Math.log(1 + gameTimeSeconds / 20) * 2.2;
     const linearBoost = gameTimeSeconds * 0.008; // Adds ~0.5 RPS per minute
     let targetRPS = base + logGrowth + linearBoost;
 
-    
+
     if (CONFIG.survival.rpsAcceleration && STATE.intervention) {
         const milestones = CONFIG.survival.rpsAcceleration.milestones;
         let multiplier = 1.0;
@@ -36,7 +36,7 @@ function calculateTargetRPS(gameTimeSeconds) {
                 multiplier = milestones[i].multiplier;
                 if (STATE.intervention.currentMilestoneIndex < i + 1) {
                     STATE.intervention.currentMilestoneIndex = i + 1;
-                    
+
                     addInterventionWarning(
                         `⚡ RPS SURGE! Traffic ×${multiplier.toFixed(1)}`,
                         "danger",
@@ -331,13 +331,33 @@ function updateRandomEvents(dt) {
     }
 }
 
-function triggerRandomEvent() {
+window.handleGameState = (timeScale) => {
+    if (timeScale === 0) { // pause state
+        STATE.intervention.pausedEvent = STATE.intervention.activeEvent;
+        STATE.intervention.remainingTime = STATE.intervention.eventEndTime - Date.now();
+        endRandomEvent();
+    } else if (STATE.intervention.pausedEvent) { // not paused state
+        triggerRandomEvent(
+            STATE.intervention.pausedEvent,
+            STATE.intervention.remainingTime
+        );
+        STATE.intervention.pausedEvent = null;
+        STATE.intervention.remainingTime = 0;
+    }
+
+    window.setTimeScale(timeScale);
+}
+
+function triggerRandomEvent(
+    eventType = null,
+    duration = null
+) {
     if (!STATE.intervention || STATE.intervention.activeEvent) return;
 
     const config = CONFIG.survival.randomEvents;
-    const eventType =
-        config.types[Math.floor(Math.random() * config.types.length)];
-    const duration = 30000; // 30 second events
+    if (!eventType)
+        eventType = config.types[Math.floor(Math.random() * config.types.length)];
+    if (!duration) duration = 30000; // 30 seconds
 
     STATE.intervention.activeEvent = eventType;
     STATE.intervention.eventEndTime = Date.now() + duration;
