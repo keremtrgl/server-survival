@@ -75,7 +75,14 @@ export function disposeRunScene({ services, requests, connections, groups }) {
 
   for (const group of [...groups]) {
     if (!claimOnce(disposedGroups, group)) continue;
-    for (const child of [...group.children]) {
+    let children;
+    try {
+      if (!Array.isArray(group.children) || typeof group.remove !== "function") continue;
+      children = [...group.children];
+    } catch {
+      continue;
+    }
+    for (const child of children) {
       try {
         group.remove(child);
       } catch {
