@@ -3,6 +3,8 @@ import {
   beginRunEpoch, disposeRunScene, getRunEpoch, scheduleForRun,
 } from "../../src/core/run-lifecycle.js";
 import { Request } from "../../src/entities/Request.js";
+import { STATE } from "../../src/state.js";
+import { animate, resetGame } from "../../game.js";
 import { resetWorld, place } from "../helpers/sim-world.mjs";
 
 afterEach(() => vi.useRealTimers());
@@ -26,6 +28,21 @@ describe("run lifecycle", () => {
     scheduleForRun(seen, 30);
     vi.advanceTimersByTime(30);
     expect(seen).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels delayed run work when survival reaches game over", () => {
+    vi.useFakeTimers();
+    const seen = vi.fn();
+    STATE.animationId = 1;
+    resetGame("survival");
+    scheduleForRun(seen, 30);
+    STATE.reputation = 0;
+
+    animate(performance.now());
+    vi.advanceTimersByTime(30);
+
+    expect(STATE.isRunning).toBe(false);
+    expect(seen).not.toHaveBeenCalled();
   });
 
   it("destroys every live entity and disposes every connection exactly once", () => {
