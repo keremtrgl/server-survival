@@ -1,6 +1,7 @@
 import { CONFIG } from "./config.js";
 
 export const STATE = {
+    runEpoch: 0,
     money: 0,
     reputation: 0,
     requestsProcessed: 0,
