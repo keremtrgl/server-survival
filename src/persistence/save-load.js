@@ -23,6 +23,8 @@ import { createConnection, restoreService } from "../sim/topology.js";
 import {
     animate,
     connectionGroup,
+    normalizeBurstCount,
+    normalizeSandboxRps,
     requestGroup,
     serviceGroup,
     syncInput,
@@ -246,7 +248,7 @@ function loadGameState(saveData = null) {
         STATE.selectedNodeId = saveData.selectedNodeId || null;
         STATE.lastTime = performance.now(); // Reset timing
         STATE.spawnTimer = saveData.spawnTimer || 0;
-        STATE.currentRPS = saveData.currentRPS || 0.5;
+        STATE.currentRPS = normalizeSandboxRps(saveData.currentRPS ?? 0.5);
         STATE.timeScale = saveData.timeScale || 0; // Start paused
         STATE.elapsedGameTime = saveData.elapsedGameTime ?? 0;
         STATE.isRunning = saveData.isRunning || false;
@@ -292,7 +294,7 @@ function loadGameState(saveData = null) {
         };
         // AI Wave session counter (#87). Old saves lack the field → fresh 0.
         STATE.inference = { expired: Number(saveData.inference?.expired) || 0 };
-        STATE.burstCount = saveData.burstCount || 10;
+        STATE.burstCount = normalizeBurstCount(saveData.burstCount ?? 10);
         STATE.gameStarted = saveData.gameStarted || true;
         STATE.previousTimeScale = saveData.previousTimeScale || 1;
 

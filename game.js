@@ -40,7 +40,7 @@ import { upkeepInstanceFactor } from "./src/sim/autoscaling.js";
 import { resetResilience } from "./src/sim/circuit-breaker.js";
 import { recomputePower } from "./src/sim/power.js";
 import { getRollingGoodput, metricsTick, resetMetrics } from "./src/core/metrics.js";
-import { beginRunEpoch, disposeRunScene } from "./src/core/run-lifecycle.js";
+import { beginRunEpoch, disposeRunScene, scheduleForRun } from "./src/core/run-lifecycle.js";
 import { renderMetricsPanel } from "./src/ui/metrics-panel.js";
 // Educational failure badges (#156): the floating "why did this fail" labels.
 // game.js owns their scene group (badgeGroup, below), ticks them once per
@@ -1152,10 +1152,7 @@ function animate(time) {
         const spawnInterval = 1 / effectiveRPS;
         // Spawn multiple requests if timeScale causes large dt jumps
         // This ensures correct spawn rate even when fast forwarding
-        while (STATE.spawnTimer >= spawnInterval) {
-            STATE.spawnTimer -= spawnInterval;
-            spawnRequest();
-        }
+        STATE.spawnTimer = drainSpawnCredit(STATE.spawnTimer, spawnInterval, spawnRequest);
         // Only ramp up in survival mode - use logarithmic growth
         if (STATE.gameMode === "survival") {
             const gameTime = STATE.elapsedGameTime;
@@ -1473,6 +1470,7 @@ function animate(time) {
         (STATE.reputation <= 0 || STATE.money <= -1000)
     ) {
         STATE.isRunning = false;
+        STATE.runEpoch = beginRunEpoch();
 
         // Determine failure reason and generate tips
         const failureAnalysis = analyzeFailure();
@@ -1636,6 +1634,42 @@ function syncInput(name, value) {
     if (input) input.value = value;
 }
 
+function normalizeBoundedNumber(value, maximum, roundDown = false) {
+    let numeric;
+    try {
+        numeric = Number(value);
+    } catch {
+        return 0;
+    }
+    if (!Number.isFinite(numeric)) return numeric === Infinity ? maximum : 0;
+    const normalized = roundDown ? Math.floor(numeric) : numeric;
+    return Math.min(maximum, Math.max(0, normalized));
+}
+
+function normalizeSandboxRps(value) {
+    return normalizeBoundedNumber(value, CONFIG.limits.maxSandboxRps);
+}
+
+function normalizeBurstCount(value) {
+    return normalizeBoundedNumber(value, CONFIG.limits.maxSandboxBurst, true);
+}
+
+function drainSpawnCredit(spawnCredit, spawnInterval, spawn) {
+    let remainingCredit = Number.isFinite(spawnCredit) ? Math.max(0, spawnCredit) : 0;
+    if (!Number.isFinite(spawnInterval) || spawnInterval <= 0) return remainingCredit;
+
+    let spawned = 0;
+    while (
+        remainingCredit >= spawnInterval &&
+        spawned < CONFIG.limits.maxSpawnCatchUpPerFrame
+    ) {
+        remainingCredit -= spawnInterval;
+        spawn();
+        spawned += 1;
+    }
+    return Math.max(0, remainingCredit);
+}
+
 window.setSandboxBudget = (value) => {
     const v = Math.max(0, parseInt(value) || 0);
     STATE.sandboxBudget = v;
@@ -1648,7 +1682,7 @@ window.resetBudget = () => {
 };
 
 window.setSandboxRPS = (value) => {
-    const v = Math.max(0, parseFloat(value) || 0);
+    const v = normalizeSandboxRps(value);
     STATE.currentRPS = v;
     syncInput("rps", v);
 };
@@ -1660,14 +1694,15 @@ window.setTrafficMix = (type, value) => {
 };
 
 window.setBurstCount = (value) => {
-    const v = Math.max(1, parseInt(value) || 10);
+    const v = normalizeBurstCount(value);
     STATE.burstCount = v;
     syncInput("burst", v);
 };
 
 window.spawnBurst = (type) => {
-    for (let i = 0; i < STATE.burstCount; i++) {
-        setTimeout(() => {
+    const burstCount = normalizeBurstCount(STATE.burstCount);
+    for (let i = 0; i < burstCount; i++) {
+        scheduleForRun(() => {
             const req = new Request(type);
             STATE.requests.push(req);
             // Same entry routing as regular spawns — STATIC bursts prefer CDN,
@@ -1798,6 +1833,7 @@ export {
     animate,
     badgeGroup,
     calculateTargetRPS,
+    drainSpawnCredit,
     applyCameraFrustum,
     camera,
     cameraTarget,
@@ -1805,6 +1841,8 @@ export {
     d,
     formatTime,
     mouse,
+    normalizeBurstCount,
+    normalizeSandboxRps,
     openMainMenu,
     plane,
     raycaster,

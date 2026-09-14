@@ -29,6 +29,7 @@ import {
 // won) is what chapter/completionist defs read — no off-by-one on a
 // chapter's final level.
 import { achievements } from "../achievements/achievements.js";
+import { scheduleForRun } from "../core/run-lifecycle.js";
 
 const CAMPAIGN_STORAGE_KEY = "serverSurvivalCampaignProgress";
 const CAMPAIGN_PROGRESS_VERSION = 1;
@@ -142,7 +143,7 @@ export class CampaignController {
                 STATE.campaign.burstTimer = 0;
                 const session = this._session;
                 for (let i = 0; i < bp.burstSize; i++) {
-                    setTimeout(() => {
+                    scheduleForRun(() => {
                         // Bail if the level ended, campaign exited, or a different
                         // level session started (retry/next) while this burst was in flight.
                         if (session !== this._session || !this.active || STATE.campaign.ended) return;
