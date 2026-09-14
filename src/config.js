@@ -11,6 +11,14 @@ export const TRAFFIC_TYPES = {
 export const CONFIG = {
   gridSize: 30,
   tileSize: 4,
+  limits: {
+    maxSandboxRps: 500,
+    maxSandboxBurst: 200,
+    maxSpawnCatchUpPerFrame: 100,
+    maxSaveBytes: 1_000_000,
+    maxSaveServices: 60,
+    maxSaveConnections: 240,
+  },
   colors: {
     bg: 0x050505,
     grid: 0x1a1a1a,

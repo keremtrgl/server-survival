@@ -7,6 +7,7 @@ import { CONFIG } from "../../src/config.js";
 import { createConnection, createService } from "../../src/sim/topology.js";
 import { resetResilience } from "../../src/sim/circuit-breaker.js";
 import { recomputePower } from "../../src/sim/power.js";
+import { beginRunEpoch } from "../../src/core/run-lifecycle.js";
 
 export { STATE, CONFIG };
 
@@ -14,6 +15,7 @@ export { STATE, CONFIG };
 // resetGame() touches, minus the UI/sound side effects — deterministic
 // sandbox-style defaults (no degradation, no upkeep drain, no interventions).
 export function resetWorld({ money = 100000, gameMode = "sandbox" } = {}) {
+  STATE.runEpoch = beginRunEpoch();
   STATE.services.forEach((s) => s.destroy());
   STATE.requests.forEach((r) => r.destroy());
   STATE.services = [];
