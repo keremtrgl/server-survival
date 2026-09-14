@@ -101,3 +101,61 @@ describe("a loaded save carries its own history, and only its own", () => {
             .toBeNull();
     });
 });
+
+describe("save validation happens before the run boundary", () => {
+    beforeEach(() => {
+        try { localStorage.clear(); } catch { /* storage unavailable */ }
+        globalThis.alertCalls.length = 0;
+        resetGame("sandbox");
+    });
+
+    it("leaves the active board untouched when provided-save validation fails", () => {
+        const before = place("db").id;
+
+        loadGameState({
+            version: "2.0",
+            services: [{ type: "not-a-service", position: [0, 0, 0] }],
+        });
+
+        expect(STATE.services.map((service) => service.id)).toEqual([before]);
+        expect(globalThis.alertCalls).toHaveLength(1);
+    });
+
+    it("leaves the active board untouched when a stored save is structurally invalid", () => {
+        const before = place("db").id;
+        localStorage.setItem("serverSurvivalSave", JSON.stringify({
+            version: "2.0",
+            services: [{ id: "bad", type: "waf", position: [Infinity, 0, 0] }],
+        }));
+
+        loadGameState();
+
+        expect(STATE.services.map((service) => service.id)).toEqual([before]);
+        expect(globalThis.alertCalls).toHaveLength(1);
+    });
+
+    it("preserves valid zero-valued save scalars", () => {
+        loadGameState({
+            version: "2.0",
+            gameMode: "sandbox",
+            money: 0,
+            reputation: 0,
+            currentRPS: 0,
+            timeScale: 0,
+            burstCount: 0,
+            sandboxBudget: 0,
+            previousTimeScale: 0,
+            services: [],
+            connections: [],
+            internetConnections: [],
+        });
+
+        expect(STATE.money).toBe(0);
+        expect(STATE.reputation).toBe(0);
+        expect(STATE.currentRPS).toBe(0);
+        expect(STATE.timeScale).toBe(0);
+        expect(STATE.burstCount).toBe(0);
+        expect(STATE.sandboxBudget).toBe(0);
+        expect(STATE.previousTimeScale).toBe(0);
+    });
+});

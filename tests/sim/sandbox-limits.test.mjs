@@ -54,9 +54,13 @@ describe("Sandbox traffic limits", () => {
     expect(remainingCredit).toBeGreaterThanOrEqual(0);
   });
 
-  it("normalizes untrusted Sandbox traffic values restored from a save", () => {
+  it("rejects non-finite Sandbox save values without mutating the active run", () => {
+    STATE.currentRPS = 12;
+    STATE.burstCount = 8;
+    globalThis.alertCalls.length = 0;
+
     loadGameState({
-      ...STATE,
+      version: "2.0",
       services: [],
       connections: [],
       internetConnections: [],
@@ -65,9 +69,8 @@ describe("Sandbox traffic limits", () => {
       burstCount: Infinity,
     });
 
-    expect(STATE.currentRPS).toBe(CONFIG.limits.maxSandboxRps);
-    expect(STATE.burstCount).toBe(CONFIG.limits.maxSandboxBurst);
-    expect(document.getElementById("rps-input").value).toBe(String(CONFIG.limits.maxSandboxRps));
-    expect(document.getElementById("burst-input").value).toBe(String(CONFIG.limits.maxSandboxBurst));
+    expect(STATE.currentRPS).toBe(12);
+    expect(STATE.burstCount).toBe(8);
+    expect(globalThis.alertCalls).toHaveLength(1);
   });
 });

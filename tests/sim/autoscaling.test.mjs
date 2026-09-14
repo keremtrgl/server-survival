@@ -391,6 +391,7 @@ describe("persistence", () => {
     const c = asg();
     c.instances = 4;
     connect(alb, c);
+    STATE.services.forEach((service, index) => service.position.set(index * 8, 0, 0));
     saveGameState("browser");
 
     resetWorld();
@@ -406,6 +407,7 @@ describe("persistence", () => {
   it("drops warming instances — a load is a cold boot", () => {
     const c = asg();
     c.warming.push({ remaining: ASG.warmupSec });
+    c.position.set(0, 0, 0);
     saveGameState("browser");
 
     resetWorld();

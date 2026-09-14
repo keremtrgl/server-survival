@@ -17,6 +17,7 @@ import { updateScoreUI } from "../core/actions.js";
 import { updateRepairCostTable } from "../core/economy.js";
 import { recomputePower } from "../sim/power.js";
 import { createConnection, restoreService } from "../sim/topology.js";
+import { isSaveFileSizeAllowed, normalizeSaveData } from "./save-validation.js";
 // Runtime-only cycle (game.js ⇄ save-load.js) — established pattern: these
 // are hoisted function declarations / top-level consts in game.js, only
 // dereferenced at runtime, long after both modules evaluate.
@@ -130,13 +131,18 @@ function onSaveGameFileUpload(event) {
         alert(i18n.t('no_file_selected'));
         return;
     }
+    if (!isSaveFileSizeAllowed(file.size)) {
+        event.target.value = "";
+        alert(i18n.t('load_failed_corrupted'));
+        return;
+    }
     const reader = new FileReader();
     reader.onload = function (e) {
         try {
             let saveData = JSON.parse(e.target.result);
-            loadGameState(saveData);
-
-            STATE.sound.playPlace(); // Use place sound as feedback
+            if (loadGameState(saveData)) {
+                STATE.sound.playPlace(); // Use place sound as feedback
+            }
         } catch (error) {
             console.error("Failed to load game:", error);
             alert(i18n.t('load_failed_corrupted'));
@@ -147,45 +153,6 @@ function onSaveGameFileUpload(event) {
     event.target.value = "";
 }
 
-function migrateOldSave(saveData) {
-    if (saveData.trafficDistribution) {
-        const oldDist = saveData.trafficDistribution;
-        if ("WEB" in oldDist || "API" in oldDist || "FRAUD" in oldDist) {
-            saveData.trafficDistribution = {
-                STATIC: oldDist.WEB || 0,
-                READ: (oldDist.API || 0) * 0.5,
-                WRITE: (oldDist.API || 0) * 0.3,
-                UPLOAD: 0.05,
-                SEARCH: (oldDist.API || 0) * 0.2,
-                MALICIOUS: oldDist.FRAUD || 0,
-            };
-        }
-    }
-
-    if (saveData.score) {
-        const oldScore = saveData.score;
-        if ("web" in oldScore || "api" in oldScore || "fraudBlocked" in oldScore) {
-            saveData.score = {
-                total: oldScore.total || 0,
-                storage: oldScore.web || 0,
-                database: oldScore.api || 0,
-                maliciousBlocked: oldScore.fraudBlocked || 0,
-            };
-        }
-    }
-
-    if ("fraudSpikeTimer" in saveData) {
-        saveData.maliciousSpikeTimer = saveData.fraudSpikeTimer;
-        delete saveData.fraudSpikeTimer;
-    }
-    if ("fraudSpikeActive" in saveData) {
-        saveData.maliciousSpikeActive = saveData.fraudSpikeActive;
-        delete saveData.fraudSpikeActive;
-    }
-
-    return saveData;
-}
-
 // Function to load game state from localStorage (triggered from UI) or provided save data (provided from uploaded file)
 function onClickContinueGame() {
     loadGameState();
@@ -194,27 +161,29 @@ function onClickContinueGame() {
 function loadGameState(saveData = null) {
     try {
         // If saveData is not provided, attempt to load from localStorage
-        if(!saveData){
+        if(saveData === null || saveData === undefined){
             const saveDataStr = localStorage.getItem("serverSurvivalSave");
             if (!saveDataStr) {
                 alert(i18n.t('no_save_found_msg'));
-                return;
+                return false;
             }
 
             saveData = JSON.parse(saveDataStr);
 
         }
 
-        // Migrate old saves if version is missing or 1.0
-        if (!saveData.version || saveData.version === "1.0") {
-            saveData = migrateOldSave(saveData);
+        const normalizedSave = normalizeSaveData(saveData);
+        if (!normalizedSave) {
+            alert(i18n.t('load_failed_corrupted'));
+            return false;
         }
+        saveData = normalizedSave;
 
         clearCurrentGame();
 
-        STATE.money = saveData.money || 0;
-        STATE.reputation = saveData.reputation || 100;
-        STATE.requestsProcessed = saveData.requestsProcessed || 0;
+        STATE.money = saveData.money;
+        STATE.reputation = saveData.reputation;
+        STATE.requestsProcessed = saveData.requestsProcessed;
         // The counters that PAIR with requestsProcessed. saveGameState()
         // spreads ...STATE, so all three have always been in the file — the
         // load simply never read them back, while requestsProcessed jumped to
@@ -227,34 +196,28 @@ function loadGameState(saveData = null) {
         // next save spreads back out. Old saves lack the keys and restore as
         // a clean slate, which is the same thing resetGame would have given
         // them.
-        STATE.lateCompletions = saveData.lateCompletions || 0;
+        STATE.lateCompletions = saveData.lateCompletions;
         STATE.failures = {
             STATIC: 0, READ: 0, WRITE: 0, UPLOAD: 0,
             SEARCH: 0, MALICIOUS: 0, INFERENCE: 0,
-            ...(saveData.failures || {}),
+            ...saveData.failures,
         };
-        STATE.failuresByReason = { ...(saveData.failuresByReason || {}) };
-        STATE.failuresDismissedAt = saveData.failuresDismissedAt || 0;
+        STATE.failuresByReason = { ...saveData.failuresByReason };
+        STATE.failuresDismissedAt = saveData.failuresDismissedAt;
         // A spread of undefined is {} (truthy), so `|| default` never fired —
         // an old save without this field got {} and NaN'd the score math.
-        STATE.score = saveData.score ? { ...saveData.score } : {
-            total: 0,
-            storage: 0,
-            database: 0,
-            maliciousBlocked: 0,
-            penalties: 0,
-        };
-        STATE.activeTool = saveData.activeTool || "select";
-        STATE.selectedNodeId = saveData.selectedNodeId || null;
+        STATE.score = { ...saveData.score };
+        STATE.activeTool = saveData.activeTool;
+        STATE.selectedNodeId = saveData.selectedNodeId;
         STATE.lastTime = performance.now(); // Reset timing
-        STATE.spawnTimer = saveData.spawnTimer || 0;
-        STATE.currentRPS = normalizeSandboxRps(saveData.currentRPS ?? 0.5);
-        STATE.timeScale = saveData.timeScale || 0; // Start paused
-        STATE.elapsedGameTime = saveData.elapsedGameTime ?? 0;
-        STATE.isRunning = saveData.isRunning || false;
+        STATE.spawnTimer = saveData.spawnTimer;
+        STATE.currentRPS = normalizeSandboxRps(saveData.currentRPS);
+        STATE.timeScale = saveData.timeScale;
+        STATE.elapsedGameTime = saveData.elapsedGameTime;
+        STATE.isRunning = saveData.isRunning;
         STATE.gameStartTime = performance.now();
 
-        STATE.gameMode = saveData.gameMode || "survival";
+        STATE.gameMode = saveData.gameMode;
 
         // A SAVE IS A DIFFERENT RUN, so the campaign stops here — the same
         // rule resetGame() follows, for the same reason and one path short of
@@ -280,23 +243,15 @@ function loadGameState(saveData = null) {
         window.campaign?.exit();
         STATE.campaign.level = null;
         STATE.campaign.currentLevelId = null;
-        STATE.sandboxBudget = saveData.sandboxBudget || 2000;
-        STATE.upkeepEnabled = saveData.upkeepEnabled !== false;
+        STATE.sandboxBudget = saveData.sandboxBudget;
+        STATE.upkeepEnabled = saveData.upkeepEnabled;
         // Same dead-fallback pattern as score above: spread of undefined is {}.
-        STATE.trafficDistribution = saveData.trafficDistribution ? { ...saveData.trafficDistribution } : {
-            STATIC: 0.3,
-            READ: 0.2,
-            WRITE: 0.15,
-            UPLOAD: 0.05,
-            SEARCH: 0.1,
-            MALICIOUS: 0.2,
-            INFERENCE: 0,
-        };
+        STATE.trafficDistribution = { ...saveData.trafficDistribution };
         // AI Wave session counter (#87). Old saves lack the field → fresh 0.
-        STATE.inference = { expired: Number(saveData.inference?.expired) || 0 };
-        STATE.burstCount = normalizeBurstCount(saveData.burstCount ?? 10);
-        STATE.gameStarted = saveData.gameStarted || true;
-        STATE.previousTimeScale = saveData.previousTimeScale || 1;
+        STATE.inference = { expired: saveData.inference.expired };
+        STATE.burstCount = normalizeBurstCount(saveData.burstCount);
+        STATE.gameStarted = saveData.gameStarted;
+        STATE.previousTimeScale = saveData.previousTimeScale;
 
         // Initialize intervention state for survival mode mechanics
         if (STATE.gameMode === "survival") {
@@ -318,38 +273,14 @@ function loadGameState(saveData = null) {
             STATE.maliciousSpikeTimer = 0;
             STATE.maliciousSpikeActive = false;
             STATE.normalTrafficDist = null;
-            STATE.autoRepairEnabled = saveData.autoRepairEnabled || false;
+            STATE.autoRepairEnabled = saveData.autoRepairEnabled;
         }
 
         // Restore finances from the save (fall back to zeroed defaults for older
         // saves that predate finance tracking). Previously this always reset to
         // zero, so every reload wiped the player's income/expense history even
         // though saveGameState had written it to disk.
-        const defaultFinances = {
-            income: {
-                byType: { STATIC: 0, READ: 0, WRITE: 0, UPLOAD: 0, SEARCH: 0 },
-                countByType: { STATIC: 0, READ: 0, WRITE: 0, UPLOAD: 0, SEARCH: 0, blocked: 0 },
-                requests: 0,
-                blocked: 0,
-                total: 0,
-            },
-            expenses: {
-                services: 0,
-                upkeep: 0,
-                repairs: 0,
-                autoRepair: 0,
-                mitigation: 0,
-                breach: 0,
-                byService: { waf: 0, alb: 0, compute: 0, db: 0, s3: 0, cache: 0, sqs: 0, search: 0, replica: 0, apigw: 0, nosql: 0, cdn: 0, serverless: 0, monitor: 0, dlq: 0, pubsub: 0, auth: 0, scheduler: 0, notify: 0, container: 0, stream: 0, dns: 0, warehouse: 0, gpu: 0, infgw: 0, power: 0 },
-                countByService: { waf: 0, alb: 0, compute: 0, db: 0, s3: 0, cache: 0, sqs: 0, search: 0, replica: 0, apigw: 0, nosql: 0, cdn: 0, serverless: 0, monitor: 0, dlq: 0, pubsub: 0, auth: 0, scheduler: 0, notify: 0, container: 0, stream: 0, dns: 0, warehouse: 0, gpu: 0, infgw: 0, power: 0 },
-            },
-        };
-        STATE.finances = saveData.finances
-            ? {
-                income: { ...defaultFinances.income, ...saveData.finances.income },
-                expenses: { ...defaultFinances.expenses, ...saveData.finances.expenses },
-            }
-            : defaultFinances;
+        STATE.finances = saveData.finances;
 
         restoreServices(saveData.services);
         // Power grid (#87): re-derive after the restore loop — spec-listed
@@ -372,7 +303,7 @@ function loadGameState(saveData = null) {
 
         restoreConnections(
             saveData.connections,
-            saveData.internetConnections || []
+            saveData.internetConnections
         );
 
         updateScoreUI();
@@ -431,9 +362,11 @@ function loadGameState(saveData = null) {
         }
 
         STATE.sound.playPlace();
+        return true;
     } catch (error) {
         console.error("Failed to load game:", error);
         alert(i18n.t('load_failed_corrupted'));
+        return false;
     }
 }
 

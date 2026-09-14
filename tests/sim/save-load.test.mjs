@@ -51,6 +51,7 @@ describe("migrateOldSave (via loadGameState on a version-less/1.0 save)", () => 
       UPLOAD: 0.05,
       SEARCH: 0.4 * 0.2,
       MALICIOUS: 0.1,
+      INFERENCE: 0,
     });
     expect(globalThis.alertCalls).toHaveLength(0); // no load-failure alert
   });
@@ -66,13 +67,14 @@ describe("migrateOldSave (via loadGameState on a version-less/1.0 save)", () => 
       storage: 30,
       database: 50,
       maliciousBlocked: 20,
+      penalties: 0,
     });
   });
 
   it("leaves a new-format mix untouched for version 2.0", () => {
     const dist = { STATIC: 0.1, READ: 0.2, WRITE: 0.3, UPLOAD: 0.1, SEARCH: 0.1, MALICIOUS: 0.2 };
     loadGameState(baseSave({ trafficDistribution: { ...dist } }));
-    expect(STATE.trafficDistribution).toEqual(dist);
+    expect(STATE.trafficDistribution).toEqual({ ...dist, INFERENCE: 0 });
   });
 });
 
