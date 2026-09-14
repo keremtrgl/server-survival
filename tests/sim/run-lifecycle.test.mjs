@@ -40,6 +40,23 @@ describe("run lifecycle", () => {
     expect(material.dispose).toHaveBeenCalledTimes(1);
   });
 
+  it("cleans identical scene resources only once across repeated disposal", () => {
+    const request = { destroy: vi.fn() };
+    const service = { destroy: vi.fn() };
+    const geometry = { dispose: vi.fn() };
+    const material = { dispose: vi.fn() };
+    const line = { mesh: { geometry, material } };
+    const scene = { services: [service], requests: [request], connections: [line], groups: [] };
+
+    disposeRunScene(scene);
+    disposeRunScene(scene);
+
+    expect(request.destroy).toHaveBeenCalledTimes(1);
+    expect(service.destroy).toHaveBeenCalledTimes(1);
+    expect(geometry.dispose).toHaveBeenCalledTimes(1);
+    expect(material.dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("cancels scheduled work when the simulation helper resets the world", () => {
     vi.useFakeTimers();
     const seen = vi.fn();

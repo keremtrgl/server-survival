@@ -4,6 +4,9 @@
 
 let epoch = 0;
 const pendingTimers = new Set();
+const disposedEntities = new WeakSet();
+const disposedConnections = new WeakSet();
+const disposedGroups = new WeakSet();
 
 export function beginRunEpoch() {
   epoch += 1;
@@ -31,6 +34,8 @@ export function scheduleForRun(callback, delayMs) {
  */
 export function disposeRunScene({ services, requests, connections, groups }) {
   for (const entity of [...services, ...requests]) {
+    if (disposedEntities.has(entity)) continue;
+    disposedEntities.add(entity);
     try {
       entity.destroy();
     } catch {
@@ -39,6 +44,8 @@ export function disposeRunScene({ services, requests, connections, groups }) {
   }
 
   for (const connection of [...connections]) {
+    if (disposedConnections.has(connection)) continue;
+    disposedConnections.add(connection);
     const mesh = connection.mesh;
     if (!mesh) continue;
 
@@ -60,6 +67,8 @@ export function disposeRunScene({ services, requests, connections, groups }) {
   }
 
   for (const group of [...groups]) {
+    if (disposedGroups.has(group)) continue;
+    disposedGroups.add(group);
     for (const child of [...group.children]) {
       try {
         group.remove(child);
