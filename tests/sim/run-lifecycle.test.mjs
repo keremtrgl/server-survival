@@ -58,6 +58,24 @@ describe("run lifecycle", () => {
     expect(material.dispose).toHaveBeenCalledTimes(1);
   });
 
+  it("clears newly-added children from a reusable group on every disposal", () => {
+    const first = {};
+    const second = {};
+    const group = {
+      children: [first],
+      remove(child) {
+        this.children = this.children.filter((candidate) => candidate !== child);
+      },
+    };
+    const scene = { services: [], requests: [], connections: [], groups: [group] };
+
+    disposeRunScene(scene);
+    group.children.push(second);
+    disposeRunScene(scene);
+
+    expect(group.children).toEqual([]);
+  });
+
   it("continues cleanup after malformed entries", () => {
     const entity = { destroy: vi.fn() };
     const geometry = { dispose: vi.fn() };
@@ -138,5 +156,31 @@ describe("run lifecycle", () => {
     expect(sqs.queueFill.material.disposed).toBe(true);
     expect(sqs.mesh.geometry.disposed).toBe(true);
     expect(sqs.mesh.material.disposed).toBe(true);
+  });
+
+  it("continues disposing satellites after an earlier satellite throws", () => {
+    resetWorld();
+    const compute = place("compute");
+    const malformed = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshBasicMaterial(),
+    );
+    const valid = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshBasicMaterial(),
+    );
+    malformed.geometry.dispose = () => {
+      throw new Error("broken satellite geometry");
+    };
+    compute.mesh.add(malformed);
+    compute.mesh.add(valid);
+    compute.satellites = [malformed, valid];
+
+    expect(() => compute.destroy()).not.toThrow();
+    expect(malformed.material.disposed).toBe(true);
+    expect(valid.geometry.disposed).toBe(true);
+    expect(valid.material.disposed).toBe(true);
+    expect(compute.mesh.children).not.toContain(valid);
+    expect(compute.satellites).toEqual([]);
   });
 });
