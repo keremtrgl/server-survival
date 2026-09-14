@@ -57,6 +57,27 @@ describe("run lifecycle", () => {
     expect(material.dispose).toHaveBeenCalledTimes(1);
   });
 
+  it("continues cleanup after malformed entries", () => {
+    const entity = { destroy: vi.fn() };
+    const geometry = { dispose: vi.fn() };
+    const material = { dispose: vi.fn() };
+    const line = { mesh: { geometry, material } };
+    const child = {};
+    const group = { children: [child], remove: vi.fn() };
+
+    disposeRunScene({
+      services: [null, entity],
+      requests: [],
+      connections: [null, line],
+      groups: [null, group],
+    });
+
+    expect(entity.destroy).toHaveBeenCalledTimes(1);
+    expect(geometry.dispose).toHaveBeenCalledTimes(1);
+    expect(material.dispose).toHaveBeenCalledTimes(1);
+    expect(group.remove).toHaveBeenCalledWith(child);
+  });
+
   it("cancels scheduled work when the simulation helper resets the world", () => {
     vi.useFakeTimers();
     const seen = vi.fn();

@@ -8,6 +8,15 @@ const disposedEntities = new WeakSet();
 const disposedConnections = new WeakSet();
 const disposedGroups = new WeakSet();
 
+function claimOnce(disposed, resource) {
+  if ((typeof resource !== "object" && typeof resource !== "function") || resource === null) {
+    return false;
+  }
+  if (disposed.has(resource)) return false;
+  disposed.add(resource);
+  return true;
+}
+
 export function beginRunEpoch() {
   epoch += 1;
   for (const timerId of pendingTimers) clearTimeout(timerId);
@@ -34,8 +43,7 @@ export function scheduleForRun(callback, delayMs) {
  */
 export function disposeRunScene({ services, requests, connections, groups }) {
   for (const entity of [...services, ...requests]) {
-    if (disposedEntities.has(entity)) continue;
-    disposedEntities.add(entity);
+    if (!claimOnce(disposedEntities, entity)) continue;
     try {
       entity.destroy();
     } catch {
@@ -44,8 +52,7 @@ export function disposeRunScene({ services, requests, connections, groups }) {
   }
 
   for (const connection of [...connections]) {
-    if (disposedConnections.has(connection)) continue;
-    disposedConnections.add(connection);
+    if (!claimOnce(disposedConnections, connection)) continue;
     const mesh = connection.mesh;
     if (!mesh) continue;
 
@@ -67,8 +74,7 @@ export function disposeRunScene({ services, requests, connections, groups }) {
   }
 
   for (const group of [...groups]) {
-    if (disposedGroups.has(group)) continue;
-    disposedGroups.add(group);
+    if (!claimOnce(disposedGroups, group)) continue;
     for (const child of [...group.children]) {
       try {
         group.remove(child);
