@@ -5,6 +5,7 @@
 
 import { STATE } from "../state.js";
 import { resetMetrics } from "../core/metrics.js";
+import { beginRunEpoch, disposeRunScene } from "../core/run-lifecycle.js";
 import { resetResilience } from "../sim/circuit-breaker.js";
 import { i18n } from "../i18n.js";
 // Achievements (#158): loading a save is a session boundary — baselines must
@@ -435,17 +436,13 @@ function loadGameState(saveData = null) {
 }
 
 function clearCurrentGame() {
-    while (serviceGroup.children.length > 0) {
-        serviceGroup.remove(serviceGroup.children[0]);
-    }
-    while (connectionGroup.children.length > 0) {
-        connectionGroup.remove(connectionGroup.children[0]);
-    }
-    while (requestGroup.children.length > 0) {
-        requestGroup.remove(requestGroup.children[0]);
-    }
-
-    STATE.services.forEach((s) => s.destroy());
+    STATE.runEpoch = beginRunEpoch();
+    disposeRunScene({
+        services: STATE.services,
+        requests: STATE.requests,
+        connections: STATE.connections,
+        groups: [serviceGroup, connectionGroup, requestGroup],
+    });
     STATE.services = [];
     STATE.requests = [];
     STATE.connections = [];

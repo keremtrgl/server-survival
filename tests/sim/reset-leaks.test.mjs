@@ -10,10 +10,18 @@
 // returns to the old run's traffic mix instead of the new one's.
 import { describe, it, expect } from "vitest";
 import { STATE } from "../../src/state.js";
-import { resetGame } from "../../game.js";
+import {
+    connectionGroup,
+    requestGroup,
+    resetGame,
+    serviceGroup,
+} from "../../game.js";
+import { Request } from "../../src/entities/Request.js";
+import { loadGameState } from "../../src/persistence/save-load.js";
 import { updateMaliciousSpike, updateTrafficShift } from "../../src/core/events.js";
 import { PLACEMENT_TYPE_MAP } from "../../src/input/handlers.js";
 import { CAMPAIGN_LEVELS } from "../../src/campaign/levels.js";
+import { place } from "../helpers/sim-world.mjs";
 
 // Exactly what a run quit in the middle of a shift leaves behind.
 const GHOST = {
@@ -115,5 +123,56 @@ describe("the pointer does not outlive its run either", () => {
         STATE.previousTimeScale = 4;        // menu opened during a 4x run
         resetGame("campaign");
         expect(STATE.previousTimeScale).toBe(1);
+    });
+});
+
+describe("run-owned Three.js visuals do not outlive their run", () => {
+    it("reset disposes service child visuals and request visuals before clearing arrays", () => {
+        resetGame("sandbox");
+        const sqs = place("sqs");
+        const request = new Request("READ");
+        STATE.requests.push(request);
+        const visuals = [sqs.loadRing, sqs.queueFill, sqs.mesh, request.mesh];
+
+        resetGame("sandbox");
+
+        for (const mesh of visuals) {
+            expect(mesh.geometry.disposed).toBe(true);
+            expect(mesh.material.disposed).toBe(true);
+        }
+        expect(STATE.services).toEqual([]);
+        expect(STATE.requests).toEqual([]);
+        expect(STATE.connections).toEqual([]);
+        expect(serviceGroup.children).toEqual([]);
+        expect(requestGroup.children).toEqual([]);
+        expect(connectionGroup.children).toEqual([]);
+    });
+
+    it("loading a save disposes the board being replaced", () => {
+        resetGame("sandbox");
+        const sqs = place("sqs");
+        const request = new Request("READ");
+        STATE.requests.push(request);
+        const visuals = [sqs.loadRing, sqs.queueFill, sqs.mesh, request.mesh];
+
+        loadGameState({
+            version: "2.0",
+            money: 100,
+            reputation: 100,
+            services: [],
+            connections: [],
+            internetConnections: [],
+        });
+
+        for (const mesh of visuals) {
+            expect(mesh.geometry.disposed).toBe(true);
+            expect(mesh.material.disposed).toBe(true);
+        }
+        expect(STATE.services).toEqual([]);
+        expect(STATE.requests).toEqual([]);
+        expect(STATE.connections).toEqual([]);
+        expect(serviceGroup.children).toEqual([]);
+        expect(requestGroup.children).toEqual([]);
+        expect(connectionGroup.children).toEqual([]);
     });
 });

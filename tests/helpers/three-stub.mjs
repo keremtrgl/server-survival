@@ -131,7 +131,12 @@ export class Texture {
 export class CanvasTexture extends Texture {}
 
 class Geometry {
-  dispose() {}
+  constructor() {
+    this.disposed = false;
+  }
+  dispose() {
+    this.disposed = true;
+  }
 }
 export class BoxGeometry extends Geometry {}
 export class ConeGeometry extends Geometry {}

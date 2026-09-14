@@ -40,6 +40,7 @@ import { upkeepInstanceFactor } from "./src/sim/autoscaling.js";
 import { resetResilience } from "./src/sim/circuit-breaker.js";
 import { recomputePower } from "./src/sim/power.js";
 import { getRollingGoodput, metricsTick, resetMetrics } from "./src/core/metrics.js";
+import { beginRunEpoch, disposeRunScene } from "./src/core/run-lifecycle.js";
 import { renderMetricsPanel } from "./src/ui/metrics-panel.js";
 // Educational failure badges (#156): the floating "why did this fail" labels.
 // game.js owns their scene group (badgeGroup, below), ticks them once per
@@ -473,6 +474,13 @@ function resetGame(mode = "survival") {
     STATE.reputation = 100;
     STATE.requestsProcessed = 0;
     STATE.lateCompletions = 0;
+    STATE.runEpoch = beginRunEpoch();
+    disposeRunScene({
+        services: STATE.services,
+        requests: STATE.requests,
+        connections: STATE.connections,
+        groups: [serviceGroup, connectionGroup, requestGroup],
+    });
     STATE.services = [];
     STATE.requests = [];
     STATE.connections = [];
@@ -678,16 +686,6 @@ function resetGame(mode = "survival") {
     );
     if (maliciousIndicator) maliciousIndicator.remove();
 
-    // Clear visual elements
-    while (serviceGroup.children.length > 0) {
-        serviceGroup.remove(serviceGroup.children[0]);
-    }
-    while (connectionGroup.children.length > 0) {
-        connectionGroup.remove(connectionGroup.children[0]);
-    }
-    while (requestGroup.children.length > 0) {
-        requestGroup.remove(requestGroup.children[0]);
-    }
     STATE.internetNode.connections = [];
     STATE.internetNode.position.set(
         CONFIG.internetNodeStartPos.x,
