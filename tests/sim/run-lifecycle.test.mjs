@@ -78,6 +78,20 @@ describe("run lifecycle", () => {
     expect(group.remove).toHaveBeenCalledWith(child);
   });
 
+  it("continues cleanup after a group without children", () => {
+    const child = {};
+    const validGroup = { children: [child], remove: vi.fn() };
+
+    disposeRunScene({
+      services: [],
+      requests: [],
+      connections: [],
+      groups: [{ remove: vi.fn() }, validGroup],
+    });
+
+    expect(validGroup.remove).toHaveBeenCalledWith(child);
+  });
+
   it("cancels scheduled work when the simulation helper resets the world", () => {
     vi.useFakeTimers();
     const seen = vi.fn();
