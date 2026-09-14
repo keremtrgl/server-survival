@@ -238,9 +238,21 @@ function makeSatellite(service) {
 }
 
 function disposeSatellite(service, mesh) {
-    service.mesh.remove(mesh);
-    mesh.geometry.dispose();
-    mesh.material.dispose();
+    try {
+        service.mesh?.remove(mesh);
+    } catch {
+        // A detached/malformed satellite must not block its resource cleanup.
+    }
+    try {
+        mesh?.geometry?.dispose();
+    } catch {
+        // Continue to the material and the remaining satellites.
+    }
+    try {
+        mesh?.material?.dispose();
+    } catch {
+        // Satellite teardown is best-effort per resource.
+    }
 }
 
 // Rebuild the ring to match (instances + warming - 1). Slots are fixed by
@@ -276,11 +288,7 @@ function refreshSatellites(service) {
 
 function disposeSatellites(service) {
     if (!service.satellites) return;
-    service.satellites.forEach((sat) => {
-        service.mesh.remove(sat);
-        sat.geometry.dispose();
-        sat.material.dispose();
-    });
+    service.satellites.forEach((sat) => disposeSatellite(service, sat));
     service.satellites = [];
 }
 

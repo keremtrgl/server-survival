@@ -6,7 +6,6 @@ let epoch = 0;
 const pendingTimers = new Set();
 const disposedEntities = new WeakSet();
 const disposedConnections = new WeakSet();
-const disposedGroups = new WeakSet();
 
 function claimOnce(disposed, resource) {
   if ((typeof resource !== "object" && typeof resource !== "function") || resource === null) {
@@ -74,7 +73,6 @@ export function disposeRunScene({ services, requests, connections, groups }) {
   }
 
   for (const group of [...groups]) {
-    if (!claimOnce(disposedGroups, group)) continue;
     let children;
     try {
       if (!Array.isArray(group.children) || typeof group.remove !== "function") continue;
