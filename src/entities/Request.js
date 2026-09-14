@@ -144,9 +144,24 @@ export class Request {
     }
 
     destroy() {
-        requestGroup.remove(this.mesh);
-        this.mesh.geometry.dispose();
-        this.mesh.material.dispose();
+        if (this._destroyed) return;
+        this._destroyed = true;
+
+        try {
+            requestGroup.remove(this.mesh);
+        } catch {
+            // Detached or malformed scene nodes still release their resources.
+        }
+        try {
+            this.mesh?.geometry?.dispose();
+        } catch {
+            // Teardown is best-effort: still dispose the material below.
+        }
+        try {
+            this.mesh?.material?.dispose();
+        } catch {
+            // A malformed material must not block the remaining cleanup.
+        }
 
         if (this.isMoving && this.target && typeof this.target.incomingCount === 'number') {
             this.target.incomingCount = Math.max(0, this.target.incomingCount - 1);

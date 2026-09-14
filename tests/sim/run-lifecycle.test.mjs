@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   beginRunEpoch, disposeRunScene, getRunEpoch, scheduleForRun,
 } from "../../src/core/run-lifecycle.js";
-import { resetWorld } from "../helpers/sim-world.mjs";
+import { Request } from "../../src/entities/Request.js";
+import { resetWorld, place } from "../helpers/sim-world.mjs";
 
 afterEach(() => vi.useRealTimers());
 
@@ -100,5 +101,42 @@ describe("run lifecycle", () => {
     resetWorld();
     vi.advanceTimersByTime(30);
     expect(seen).not.toHaveBeenCalled();
+  });
+
+  it("service and request destruction is idempotent for every owned visual", () => {
+    resetWorld();
+    const sqs = place("sqs");
+    const request = new Request("READ");
+    const visuals = [sqs.loadRing, sqs.queueFill, sqs.mesh, request.mesh];
+    const disposals = visuals.flatMap((mesh) => [
+      vi.spyOn(mesh.geometry, "dispose"),
+      vi.spyOn(mesh.material, "dispose"),
+    ]);
+
+    sqs.destroy();
+    request.destroy();
+    sqs.destroy();
+    request.destroy();
+
+    for (const dispose of disposals) expect(dispose).toHaveBeenCalledTimes(1);
+    for (const mesh of visuals) {
+      expect(mesh.geometry.disposed).toBe(true);
+      expect(mesh.material.disposed).toBe(true);
+    }
+  });
+
+  it("continues destroying a service when one child resource is malformed", () => {
+    resetWorld();
+    const sqs = place("sqs");
+    sqs.loadRing.geometry.dispose = () => {
+      throw new Error("broken geometry");
+    };
+
+    expect(() => sqs.destroy()).not.toThrow();
+    expect(sqs.loadRing.material.disposed).toBe(true);
+    expect(sqs.queueFill.geometry.disposed).toBe(true);
+    expect(sqs.queueFill.material.disposed).toBe(true);
+    expect(sqs.mesh.geometry.disposed).toBe(true);
+    expect(sqs.mesh.material.disposed).toBe(true);
   });
 });

@@ -62,6 +62,20 @@ import { initGpu, startModelLoad, tickGpu } from "../sim/gpu.js";
 import { initInfgw, tickInfgw } from "../sim/infgw.js";
 import { serviceGroup } from "../../game.js";
 
+function disposeVisual(mesh) {
+  if (!mesh) return;
+  try {
+    mesh.geometry?.dispose();
+  } catch {
+    // Teardown is best-effort: one malformed resource must not retain peers.
+  }
+  try {
+    mesh.material?.dispose();
+  } catch {
+    // Continue through every visual owned by the service.
+  }
+}
+
 export class Service {
   constructor(type, pos) {
     this.id = "svc_" + Math.random().toString(36).substr(2, 9);
@@ -857,26 +871,31 @@ export class Service {
   }
 
   destroy() {
-    serviceGroup.remove(this.mesh);
+    if (this._destroyed) return;
+    this._destroyed = true;
+
+    try {
+      serviceGroup.remove(this.mesh);
+    } catch {
+      // Detached or malformed scene nodes still release their resources.
+    }
     // ASG satellites (#195) are children of this.mesh — drop and dispose them
     // explicitly, the parent's dispose() below does not recurse.
-    disposeSatellites(this);
+    try {
+      disposeSatellites(this);
+    } catch {
+      // Continue releasing the service's remaining owned visuals.
+    }
+    disposeVisual(this.loadRing);
+    disposeVisual(this.queueFill);
     if (this.tierRings) {
       this.tierRings.forEach((r) => {
-        r.geometry.dispose();
-        r.material.dispose();
+        disposeVisual(r);
       });
     }
-    if (this.healthBarBg) {
-      this.healthBarBg.geometry.dispose();
-      this.healthBarBg.material.dispose();
-    }
-    if (this.healthBarFill) {
-      this.healthBarFill.geometry.dispose();
-      this.healthBarFill.material.dispose();
-    }
-    this.mesh.geometry.dispose();
-    this.mesh.material.dispose();
+    disposeVisual(this.healthBarBg);
+    disposeVisual(this.healthBarFill);
+    disposeVisual(this.mesh);
   }
 
   createHealthBar() {
