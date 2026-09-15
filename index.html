@@ -250,6 +250,7 @@
               Auto-Repair: OFF
             </button>
             <button onclick="togglePanel('health-panel-content', 'health-panel-icon')"
+              aria-label="Service Health" data-i18n-aria-label="service_health" aria-controls="health-panel-content" aria-expanded="true"
               class="w-6 h-6 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded border border-gray-600 text-gray-400 transition">
               <span id="health-panel-icon" class="text-[10px]">▲</span>
             </button>
@@ -281,6 +282,7 @@
             Metrics
           </h3>
           <button onclick="togglePanel('metrics-panel-content', 'metrics-panel-icon')"
+            aria-label="Metrics" data-i18n-aria-label="metrics" aria-controls="metrics-panel-content" aria-expanded="true"
             class="w-6 h-6 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded border border-gray-600 text-gray-400 transition">
             <span id="metrics-panel-icon" class="text-[10px]">▲</span>
           </button>
@@ -302,6 +304,7 @@
             Finances
           </h3>
           <button onclick="togglePanel('finances-panel-content', 'finances-panel-icon')"
+            aria-label="Finances" data-i18n-aria-label="finances" aria-controls="finances-panel-content" aria-expanded="true"
             class="w-6 h-6 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded border border-gray-600 text-gray-400 transition">
             <span id="finances-panel-icon" class="text-[10px]">▲</span>
           </button>
@@ -377,7 +380,7 @@
           <option value="hi" class="bg-gray-800 text-white">हिन्दी</option>
         </select>
       </div>
-      <button onclick="showSaveModal()" id="btn-save"
+      <button onclick="showSaveModal()" id="btn-save" aria-label="Save Game" data-i18n-aria-label="save_game"
         class="time-btn w-10 h-10 rounded-lg border border-gray-600 text-gray-400 hover:text-white hover:border-green-500 hover:text-green-400 flex items-center justify-center"
         data-i18n-title="save_game"
         title="Save Game">
@@ -386,7 +389,7 @@
             d="M8 7H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
         </svg>
       </button>
-      <button onclick="showShareModal()" id="btn-share"
+      <button onclick="showShareModal()" id="btn-share" aria-label="Share Architecture" data-i18n-aria-label="share_arch"
         class="time-btn w-10 h-10 rounded-lg border border-gray-600 text-gray-400 hover:text-white hover:border-cyan-500 hover:text-cyan-400 flex items-center justify-center"
         data-i18n-title="share_arch"
         title="Share Architecture">
@@ -395,7 +398,7 @@
             d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
         </svg>
       </button>
-      <button onclick="restartGame()" id="btn-restart"
+      <button onclick="restartGame()" id="btn-restart" aria-label="Restart Game" data-i18n-aria-label="restart_game"
         class="time-btn w-10 h-10 rounded-lg border border-gray-600 text-gray-400 hover:text-white hover:border-red-500 hover:text-red-400 flex items-center justify-center mr-2"
         data-i18n-title="restart_game"
         title="Restart Game">
@@ -406,19 +409,19 @@
         </svg>
       </button>
       <div class="w-px bg-gray-700 mx-1"></div>
-      <button onclick="handleGameState(0)" id="btn-pause"
+      <button onclick="handleGameState(0)" id="btn-pause" aria-label="Pause" data-i18n-aria-label="time_pause"
         class="time-btn w-10 h-10 rounded-lg border border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 flex items-center justify-center">
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
           <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
         </svg>
       </button>
-      <button onclick="handleGameState(1)" id="btn-play"
+      <button onclick="handleGameState(1)" id="btn-play" aria-label="Play" data-i18n-aria-label="time_play"
         class="time-btn active w-10 h-10 rounded-lg border border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 flex items-center justify-center">
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
           <path d="M8 5v14l11-7z" />
         </svg>
       </button>
-      <button onclick="handleGameState(3)" id="btn-fast"
+      <button onclick="handleGameState(3)" id="btn-fast" aria-label="Fast Forward (3×)" data-i18n-aria-label="time_fast_forward"
         class="time-btn w-10 h-10 rounded-lg border border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 flex items-center justify-center relative">
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
           <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z" />
@@ -427,7 +430,7 @@
     </div>
 
     <!-- Sandbox Control Panel (Bottom Left - replaces objectives in sandbox mode) -->
-    <div id="sandboxPanel" class="hidden absolute bottom-24 left-4 glass-panel rounded-xl p-4 pointer-events-auto w-80">
+    <div id="sandboxPanel" class="sandbox-panel-compact hidden absolute bottom-24 left-4 glass-panel rounded-xl p-4 pointer-events-auto w-80">
       <div class="flex justify-between items-center mb-3 border-b border-gray-700 pb-2">
         <h3 data-i18n="sandbox" class="text-sm font-bold text-purple-400">SANDBOX</h3>
         <button onclick="clearAllServices()"
@@ -678,7 +681,7 @@
       <!-- Settings: help / music / sfx. Icon-only and out at the edge — they
            are settings, not gameplay, and used to hold the three leftmost slots. -->
       <div class="flex gap-1 pl-2 border-l border-gray-700">
-        <button id="tool-help" title="Help" data-i18n-title="help"
+        <button id="tool-help" title="Help" data-i18n-title="help" aria-label="Help" data-i18n-aria-label="help"
           class="service-btn bg-gray-700 text-gray-200 rounded-lg w-8 h-8 flex items-center justify-center border border-gray-600"
           onclick="showFAQ()">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -690,7 +693,7 @@
         </button>
 
         <!-- Music / SFX toggles (#112) -->
-        <button id="tool-music" title="Music" data-i18n-title="music"
+        <button id="tool-music" title="Music" data-i18n-title="music" aria-label="Music" data-i18n-aria-label="music"
           class="service-btn bg-gray-700 text-gray-200 rounded-lg w-8 h-8 flex items-center justify-center border border-gray-600 bg-red-900 pulse-green"
           onclick="toggleMusic()">
           <svg id="music-icon" class="w-4 h-4 opacity-40" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -699,7 +702,7 @@
             <circle cx="17" cy="16" r="2" />
           </svg>
         </button>
-        <button id="tool-sfx" title="SFX" data-i18n-title="sfx"
+        <button id="tool-sfx" title="SFX" data-i18n-title="sfx" aria-label="SFX" data-i18n-aria-label="sfx"
           class="service-btn bg-gray-700 text-gray-200 rounded-lg w-8 h-8 flex items-center justify-center border border-gray-600 bg-red-900 pulse-green"
           onclick="toggleSfx()">
           <svg id="sfx-icon" class="w-4 h-4 opacity-40" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -711,7 +714,7 @@
         <!-- Failure-reason badges toggle (#156). Default ON — the labels are
              the teaching half of every failure — with the preference persisted
              in localStorage exactly like the sound channels above. -->
-        <button id="tool-badges" title="Failure reasons" data-i18n-title="failure_badges"
+        <button id="tool-badges" title="Failure reasons" data-i18n-title="failure_badges" aria-label="Failure reasons" data-i18n-aria-label="failure_badges"
           class="service-btn bg-gray-700 text-gray-200 rounded-lg w-8 h-8 flex items-center justify-center border border-gray-600"
           onclick="toggleFailureBadges()">
           <svg id="badges-icon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -760,7 +763,7 @@
   <div id="modal"
     class="hidden fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
     <div id="modal-card" class="relative glass-panel p-8 rounded-2xl text-center max-w-md border border-gray-600 pointer-events-auto">
-      <button onclick="toggleFailureModal()" title="Minimize" data-i18n-title="minimize"
+      <button onclick="toggleFailureModal()" title="Minimize" data-i18n-title="minimize" aria-label="Minimize" data-i18n-aria-label="minimize"
         class="absolute top-3 right-3 w-6 h-6 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded border border-gray-600 text-gray-400 transition">
         <span class="text-[10px]">─</span>
       </button>
@@ -797,7 +800,7 @@
       class="relative bg-gray-900/90 p-12 rounded-2xl border border-blue-500/30 shadow-2xl max-w-md w-full text-center">
       <!-- Menu Music / SFX toggles (#112) -->
       <div class="absolute top-4 right-4 flex gap-1">
-        <button id="menu-music-btn" onclick="toggleMusic()" title="Music"
+        <button id="menu-music-btn" onclick="toggleMusic()" title="Music" aria-label="Music" data-i18n-aria-label="music"
           class="text-gray-400 hover:text-white transition p-2 rounded-full pulse-green">
           <svg id="menu-music-icon" class="w-5 h-5 opacity-40" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 18V6l10-2v12" />
@@ -805,7 +808,7 @@
             <circle cx="17" cy="16" r="2" />
           </svg>
         </button>
-        <button id="menu-sfx-btn" onclick="toggleSfx()" title="SFX"
+        <button id="menu-sfx-btn" onclick="toggleSfx()" title="SFX" aria-label="SFX" data-i18n-aria-label="sfx"
           class="text-gray-400 hover:text-white transition p-2 rounded-full pulse-green">
           <svg id="menu-sfx-icon" class="w-5 h-5 opacity-40" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H3v6h3l5 4V5z" />
@@ -1030,7 +1033,7 @@
     <div class="glass-panel p-8 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
       <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
         <h2 data-i18n="operator_manual" class="text-2xl font-bold text-white">OPERATOR MANUAL</h2>
-        <button onclick="closeFAQ()" class="text-gray-400 hover:text-white">
+        <button onclick="closeFAQ()" aria-label="Close Manual" data-i18n-aria-label="close_manual" class="text-gray-400 hover:text-white">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
@@ -1629,7 +1632,7 @@
             <span id="trophies-count"
               class="text-sm bg-amber-900/50 px-3 py-1 rounded-full text-amber-300 border border-amber-700 font-mono">0/38</span>
           </div>
-          <button onclick="closeTrophies()"
+          <button onclick="closeTrophies()" aria-label="Cancel" data-i18n-aria-label="cancel"
             class="text-gray-400 hover:text-white text-2xl">×</button>
         </div>
         <div id="trophies-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1645,7 +1648,7 @@
       <div class="glass-panel rounded-2xl p-8 max-w-2xl w-full border border-yellow-500/30">
         <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
           <h2 class="text-3xl font-bold text-yellow-400" data-i18n="campaign_select_title">CAMPAIGN</h2>
-          <button onclick="exitCampaignToMenu()"
+          <button onclick="exitCampaignToMenu()" aria-label="Cancel" data-i18n-aria-label="cancel"
             class="text-gray-400 hover:text-white text-2xl">×</button>
         </div>
         <div id="campaign-levels-list" class="space-y-6">
@@ -1664,7 +1667,7 @@
           <div id="campaign-briefing-icon" class="text-5xl"></div>
           <div>
             <div class="text-xs text-gray-500 font-mono" id="campaign-briefing-chapter"></div>
-            <h2 id="campaign-briefing-title" class="text-2xl font-bold text-white"></h2>
+            <h2 id="campaign-briefing-title" tabindex="-1" class="text-2xl font-bold text-white"></h2>
           </div>
         </div>
 

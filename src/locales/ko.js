@@ -1,4 +1,7 @@
 export const KO_TRANSLATIONS = {
+    "time_pause": "일시 정지",
+    "time_play": "재생",
+    "time_fast_forward": "빨리 감기 (3배속)",
     "title": "서버: 생존 프로토콜",
     "survival": "생존",
     "budget": "예산",

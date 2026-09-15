@@ -1,4 +1,7 @@
 export const DE_TRANSLATIONS = {
+    "time_pause": "Pausieren",
+    "time_play": "Fortsetzen",
+    "time_fast_forward": "Vorspulen (3×)",
     "title": "SERVER: Survival Protocol",
     "survival": "ÜBERLEBEN",
     "budget": "BUDGET",

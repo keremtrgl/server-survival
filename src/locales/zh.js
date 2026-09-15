@@ -1,4 +1,7 @@
 export const ZH_TRANSLATIONS = {
+    "time_pause": "暂停",
+    "time_play": "播放",
+    "time_fast_forward": "快进（3倍速）",
     "title": "服务器：生存协议",
     "survival": "生存模式",
     "budget": "预算",

@@ -1,4 +1,7 @@
 export const PT_BR_TRANSLATIONS = {
+    "time_pause": "Pausar",
+    "time_play": "Reproduzir",
+    "time_fast_forward": "Avançar rápido (3×)",
     "title": "SERVER: Survival Protocol",
     "survival": "SOBREVIVÊNCIA",
     "budget": "Orçamento",

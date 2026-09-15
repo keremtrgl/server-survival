@@ -952,12 +952,25 @@ window.togglePanel = (contentId, iconId) => {
     const content = document.getElementById(contentId);
     const icon = document.getElementById(iconId);
     if (content) {
-        content.classList.toggle('hidden');
+        const collapsed = content.classList.toggle('hidden');
+        document.querySelectorAll(`button[aria-controls="${contentId}"]`).forEach((button) => {
+            button.setAttribute("aria-expanded", String(!collapsed));
+        });
         if (icon) {
             icon.innerText = content.classList.contains('hidden') ? '▼' : '▲';
         }
     }
 };
+
+// Attribute labels follow the same locale changes as the visible HUD copy.
+function translateControlLabels() {
+    document.querySelectorAll("[data-i18n-aria-label]").forEach((control) => {
+        control.setAttribute("aria-label", i18n.t(control.getAttribute("data-i18n-aria-label")));
+    });
+}
+translateControlLabels();
+window.addEventListener("localeChanged", translateControlLabels);
+document.addEventListener("DOMContentLoaded", translateControlLabels);
 
 window.toggleFailureModal = () => {
     const card = document.getElementById("modal-card");
