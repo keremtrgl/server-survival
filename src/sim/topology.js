@@ -205,27 +205,35 @@ function isValidEdge(t1, t2) {
 }
 
 function createConnection(fromId, toId) {
-    if (fromId === toId) return;
+    if (fromId === toId) {
+        return { ok: false, reasonKey: "connection_same_node" };
+    }
     const getEntity = (id) =>
         id === "internet"
             ? STATE.internetNode
             : STATE.services.find((s) => s.id === id);
     const from = getEntity(fromId),
         to = getEntity(toId);
-    if (!from || !to || from.connections.includes(toId)) return;
+    if (!from || !to) {
+        return { ok: false, reasonKey: "connection_endpoint_missing" };
+    }
+    if (from.connections.includes(toId)) {
+        return { ok: false, reasonKey: "connection_duplicate" };
+    }
     // Reject the reverse edge of an existing link. ALB⇄SQS is the only pair valid
     // in both directions, and having both at once loops requests forever (SQS
     // pushes to ALB, ALB's generic forwarding pushes back) — they never reach
     // finishRequest/failRequest and leak. Either single direction stays legal.
-    if (to.connections && to.connections.includes(fromId)) return;
+    if (to.connections && to.connections.includes(fromId)) {
+        return { ok: false, reasonKey: "connection_reverse" };
+    }
 
     const t1 = from.type,
         t2 = to.type;
 
     if (!isValidEdge(t1, t2)) {
         new Audio("assets/sounds/click-9.mp3").play();
-        console.error(i18n.t('invalid_topology_detailed'));
-        return;
+        return { ok: false, reasonKey: "invalid_topology_detailed" };
     }
 
     new Audio("assets/sounds/click-5.mp3").play();
@@ -248,6 +256,8 @@ function createConnection(fromId, toId) {
             toType: t2,
         });
     }
+
+    return { ok: true };
 }
 
 function deleteConnection(fromId, toId) {

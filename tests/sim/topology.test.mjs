@@ -1,7 +1,7 @@
 // Topology tests over the REAL modules (#155 PR 10, tier 2): the valid-edge
 // table, the reverse-edge block (#191/#192), placement economics, deletion
 // with refund + orphaned-request cleanup, and grid snapping.
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   createConnection,
   deleteConnection,
@@ -10,9 +10,12 @@ import {
 } from "../../src/sim/topology.js";
 import { createService } from "../../src/sim/topology.js";
 import { Request } from "../../src/entities/Request.js";
+import { i18n } from "../../src/i18n.js";
 import { STATE, CONFIG, resetWorld, place, connect } from "../helpers/sim-world.mjs";
+import { raycastHits, resetRaycastHits } from "../helpers/three-stub.mjs";
 
 beforeEach(() => resetWorld());
+afterEach(resetRaycastHits);
 
 function tryEdge(fromType, toType) {
   const from = fromType === "internet" ? STATE.internetNode : place(fromType);
@@ -83,17 +86,45 @@ describe("valid-edge table — rejected pairs", () => {
 
   it("self-connection is a no-op", () => {
     const alb = place("alb");
-    createConnection(alb.id, alb.id);
+    expect(createConnection(alb.id, alb.id)).toEqual({
+      ok: false,
+      reasonKey: "connection_same_node",
+    });
     expect(alb.connections).toHaveLength(0);
+    expect(STATE.connections).toHaveLength(0);
   });
 
-  it("duplicate edge is not added twice", () => {
+  it("returns a reason and does not mutate state for a missing endpoint", () => {
     const alb = place("alb");
-    const sqs = place("sqs");
-    createConnection(alb.id, sqs.id);
-    createConnection(alb.id, sqs.id);
-    expect(alb.connections.filter((c) => c === sqs.id)).toHaveLength(1);
+    expect(createConnection(alb.id, "missing")).toEqual({
+      ok: false,
+      reasonKey: "connection_endpoint_missing",
+    });
+    expect(alb.connections).toHaveLength(0);
+    expect(STATE.connections).toHaveLength(0);
+  });
+
+  it("returns a reason and does not mutate state for a duplicate edge", () => {
+    const from = place("alb");
+    const to = place("sqs");
+    expect(createConnection(from.id, to.id)).toEqual({ ok: true });
+    expect(createConnection(from.id, to.id)).toEqual({
+      ok: false,
+      reasonKey: "connection_duplicate",
+    });
+    expect(from.connections.filter((c) => c === to.id)).toHaveLength(1);
     expect(STATE.connections).toHaveLength(1);
+  });
+
+  it("returns a reason and does not mutate state for an invalid edge", () => {
+    const from = place("db");
+    const to = place("compute");
+    expect(createConnection(from.id, to.id)).toEqual({
+      ok: false,
+      reasonKey: "invalid_topology_detailed",
+    });
+    expect(from.connections).toHaveLength(0);
+    expect(STATE.connections).toHaveLength(0);
   });
 });
 
@@ -101,10 +132,14 @@ describe("reverse-edge block (#191/#192)", () => {
   it("sqs->alb is rejected when alb->sqs already exists (request loop guard)", () => {
     const alb = place("alb");
     const sqs = place("sqs");
-    createConnection(alb.id, sqs.id);
-    createConnection(sqs.id, alb.id);
+    expect(createConnection(alb.id, sqs.id)).toEqual({ ok: true });
+    expect(createConnection(sqs.id, alb.id)).toEqual({
+      ok: false,
+      reasonKey: "connection_reverse",
+    });
     expect(alb.connections).toContain(sqs.id);
     expect(sqs.connections).not.toContain(alb.id);
+    expect(STATE.connections).toHaveLength(1);
   });
 
   it("alb->sqs is rejected when sqs->alb already exists (other direction)", () => {
@@ -114,6 +149,33 @@ describe("reverse-edge block (#191/#192)", () => {
     createConnection(alb.id, sqs.id);
     expect(sqs.connections).toContain(alb.id);
     expect(alb.connections).not.toContain(sqs.id);
+  });
+});
+
+describe("connect tool rejection feedback", () => {
+  it("clears the selected endpoint and announces the rejection reason", () => {
+    const alb = place("alb");
+    const container = document.getElementById("canvas-container");
+    const clickAlb = () => {
+      raycastHits.services = [{ object: alb.mesh }];
+      container.dispatchEvent(new MouseEvent("mousedown", {
+        bubbles: true,
+        button: 0,
+        clientX: 100,
+        clientY: 100,
+      }));
+    };
+
+    STATE.activeTool = "connect";
+    clickAlb();
+    expect(STATE.selectedNodeId).toBe(alb.id);
+
+    clickAlb();
+
+    expect(STATE.selectedNodeId).toBeNull();
+    expect(document.getElementById("live-status").textContent)
+      .toBe(i18n.t("connection_same_node"));
+    expect(STATE.connections).toHaveLength(0);
   });
 });
 

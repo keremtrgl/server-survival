@@ -19,6 +19,7 @@ import {
     warmingCount,
 } from "../sim/autoscaling.js";
 import { SERVICE_CATEGORIES, setToolbarCategory } from "../ui/toolbar.js";
+import { announceStatus } from "../ui/live-status.js";
 import {
     createConnection,
     createService,
@@ -447,8 +448,9 @@ function handlePrimaryDown(clientX, clientY, preventDefault = () => {}) {
         (i.type === "service" || i.type === "internet")
     ) {
         if (STATE.selectedNodeId) {
-            createConnection(STATE.selectedNodeId, i.id);
+            const result = createConnection(STATE.selectedNodeId, i.id);
             STATE.selectedNodeId = null;
+            if (!result.ok) announceStatus(result.reasonKey);
         } else {
             STATE.selectedNodeId = i.id;
             new Audio("assets/sounds/click-5.mp3").play();
