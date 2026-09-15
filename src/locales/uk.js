@@ -1,4 +1,7 @@
 export const UK_TRANSLATIONS = {
+    "time_pause": "Пауза",
+    "time_play": "Відтворити",
+    "time_fast_forward": "Прискорити (3×)",
     "title": "СЕРВЕР: Протокол виживання",
     "survival": "ВИЖИВАННЯ",
     "budget": "БЮДЖЕТ",

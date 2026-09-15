@@ -1,4 +1,7 @@
 export const FR_TRANSLATIONS = {
+    "time_pause": "Pause",
+    "time_play": "Lecture",
+    "time_fast_forward": "Avance rapide (3×)",
     "title": "SERVER: Survival Protocol",
     "survival": "SURVIE",
     "budget": "BUDGET",

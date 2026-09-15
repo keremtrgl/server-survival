@@ -83,18 +83,19 @@ function renderCampaignLevels() {
         const time = entry ? ` · ${Math.round(entry.bestTimeSec)}s` : "";
         const clickHandler = unlocked ? `onclick="openCampaignBriefing(${lvl.id})"` : "";
         const cursor = unlocked ? "cursor-pointer hover:bg-gray-800/60" : "opacity-50 cursor-not-allowed";
-        // Hover tooltip works for BOTH locked and unlocked levels — players can peek ahead at what's coming.
+        // Preview is supplementary: native button activation opens the full briefing.
         const hoverHandlers = `onmousemove="showCampaignLevelTooltip(event, ${lvl.id})" onmouseleave="hideCampaignLevelTooltip()"`;
+        const focusHandlers = unlocked ? `onfocus="showCampaignLevelTooltip(event, ${lvl.id})" onblur="hideCampaignLevelTooltip()" onkeydown="if(event.key === 'Escape') hideCampaignLevelTooltip()"` : "";
         html += `
-            <div ${clickHandler} ${hoverHandlers}
-                class="border border-gray-700 rounded-lg p-3 ${cursor} transition flex items-center gap-3">
-                <div class="text-3xl">${lvl.icon}</div>
-                <div class="flex-1">
-                    <div class="text-white font-bold">${lvl.id}. ${levelText(lvl.id, "title")}</div>
-                    <div class="text-gray-400 text-xs">${scenarioPreview(levelText(lvl.id, "scenario"))}</div>
-                </div>
-                <div class="text-yellow-400 font-mono text-sm">${starStr}${time}</div>
-            </div>`;
+            <button type="button" data-campaign-level="${lvl.id}" aria-disabled="${!unlocked}" ${unlocked ? "" : "disabled"} ${clickHandler} ${hoverHandlers} ${focusHandlers}
+                class="w-full text-left border border-gray-700 rounded-lg p-3 ${cursor} transition flex items-center gap-3">
+                <span class="text-3xl" aria-hidden="true">${lvl.icon}</span>
+                <span class="flex-1 min-w-0">
+                    <span class="block text-white font-bold">${lvl.id}. ${levelText(lvl.id, "title")}</span>
+                    <span class="block text-gray-400 text-xs">${scenarioPreview(levelText(lvl.id, "scenario"))}</span>
+                </span>
+                <span class="text-yellow-400 font-mono text-sm">${starStr}${time}</span>
+            </button>`;
     }
     html += "</div>";
     list.innerHTML = html;
@@ -143,10 +144,13 @@ function showCampaignLevelTooltip(event, levelId) {
     // Position: prefer right-of-cursor, but clamp to viewport so it never spills off-screen.
     const margin = 16;
     const rect = t.getBoundingClientRect();
-    let left = event.clientX + 20;
-    let top = event.clientY + 12;
+    const anchor = event.currentTarget?.getBoundingClientRect();
+    const clientX = Number.isFinite(event.clientX) ? event.clientX : (anchor?.right ?? margin);
+    const clientY = Number.isFinite(event.clientY) ? event.clientY : (anchor?.top ?? margin);
+    let left = clientX + 20;
+    let top = clientY + 12;
     if (left + rect.width + margin > window.innerWidth) {
-        left = event.clientX - rect.width - 20;
+        left = clientX - rect.width - 20;
     }
     if (top + rect.height + margin > window.innerHeight) {
         top = Math.max(margin, window.innerHeight - rect.height - margin);
@@ -169,6 +173,7 @@ let _pendingCampaignLevelId = null;
 function openCampaignBriefing(levelId) {
     const level = CAMPAIGN_LEVELS.find((l) => l.id === levelId);
     if (!level) return;
+    hideCampaignLevelTooltip();
     _pendingCampaignLevelId = levelId;
 
     document.getElementById("campaign-select-modal").classList.add("hidden");
@@ -189,6 +194,7 @@ function openCampaignBriefing(levelId) {
         level.objectives.primary.map((o) => `<li>• ${objLabel(level.id, o)}</li>`).join("");
     document.getElementById("campaign-briefing-bonus").innerHTML =
         level.objectives.bonus.map((o) => `<li>• ${objLabel(level.id, o)}</li>`).join("");
+    document.getElementById("campaign-briefing-title").focus();
 }
 
 function campaignStartCurrentLevel() {

@@ -1,4 +1,7 @@
 export const NE_TRANSLATIONS = {
+    "time_pause": "रोक्नुहोस्",
+    "time_play": "सुरु गर्नुहोस्",
+    "time_fast_forward": "छिटो अगाडि बढाउनुहोस् (३×)",
     "title": "सर्भर: अस्तित्व प्रोटोकल",
     "survival": "अस्तित्व",
     "budget": "बजेट",

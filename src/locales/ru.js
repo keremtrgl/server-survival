@@ -1,4 +1,7 @@
 export const RU_TRANSLATIONS = {
+    "time_pause": "Пауза",
+    "time_play": "Воспроизвести",
+    "time_fast_forward": "Ускорить (3×)",
     "title": "СЕРВЕР: Протокол Выживания",
     "survival": "ВЫЖИВАНИЕ",
     "budget": "БЮДЖЕТ",

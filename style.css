@@ -1,4 +1,43 @@
 /* Base styles and aesthetics */
+:root {
+  /* Includes the category row, build buttons, bottom margin and panel gap. */
+  --toolbar-safe-height: 10rem;
+}
+
+#sandboxPanel.sandbox-panel-compact {
+  box-sizing: border-box;
+  bottom: calc(var(--toolbar-safe-height) + env(safe-area-inset-bottom));
+  max-height: calc(100vh - var(--toolbar-safe-height) - env(safe-area-inset-bottom));
+  max-height: calc(100dvh - var(--toolbar-safe-height) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  width: min(20rem, calc(100vw - 2rem));
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #67e8f9;
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  #sandboxPanel.sandbox-panel-compact {
+    left: max(0.5rem, env(safe-area-inset-left));
+    width: calc(100vw - 1rem - env(safe-area-inset-left) - env(safe-area-inset-right));
+    padding: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 body {
   margin: 0;
   overflow: hidden;

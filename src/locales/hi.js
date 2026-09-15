@@ -33,6 +33,9 @@
 //   Numbers, $ amounts and unit suffixes stay Western: $100, 45s, kW, RPS,
 //     ms, req/s — the game teaches cloud economics in $ deliberately.
 export const HI_TRANSLATIONS = {
+    "time_pause": "रोकें",
+    "time_play": "चलाएँ",
+    "time_fast_forward": "तेज़ आगे बढ़ाएँ (३×)",
     "title": "SERVER: Survival Protocol",
     "survival": "SURVIVAL",
     "budget": "बजट",

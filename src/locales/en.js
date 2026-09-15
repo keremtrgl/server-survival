@@ -1,4 +1,7 @@
 export const EN_TRANSLATIONS = {
+    "time_pause": "Pause",
+    "time_play": "Play",
+    "time_fast_forward": "Fast Forward (3×)",
     "title": "SERVER: Survival Protocol",
     "survival": "SURVIVAL",
     "budget": "BUDGET",
