@@ -158,10 +158,11 @@ function onClickContinueGame() {
     loadGameState();
 }
 
-function loadGameState(saveData = null) {
+function loadGameState(saveData) {
     try {
-        // If saveData is not provided, attempt to load from localStorage
-        if(saveData === null || saveData === undefined){
+        // Only an omitted argument means "load from browser". An explicit
+        // null/undefined is untrusted parsed input and must fail validation.
+        if(arguments.length === 0){
             const saveDataStr = localStorage.getItem("serverSurvivalSave");
             if (!saveDataStr) {
                 alert(i18n.t('no_save_found_msg'));
