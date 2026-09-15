@@ -237,6 +237,15 @@ function startCampaignLevel(levelId) {
     // Toolbar gating
     applyCampaignToolbarGating(level.allowedServices, level.forbiddenServices);
 
+    // The controller evaluates objectives at 2 Hz once play begins. Render
+    // its fresh, empty result objects now so a paused level opens with its
+    // own goals rather than the survival placeholder; do not evaluate here.
+    renderCampaignObjectives(
+        level,
+        STATE.campaign.objectiveResults,
+        STATE.campaign.bonusResults,
+    );
+
     // Teach a first-timer who entered through the EDUCATION mode (#263).
     // The tutorial had exactly one call site — survival's start button — so a
     // player who clicked Campaign, the mode whose whole purpose is teaching,

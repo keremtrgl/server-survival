@@ -397,10 +397,26 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
+function setHudModeTitle(mode) {
+    const title = document.getElementById("game-mode-title");
+    if (!title) return;
+
+    const modes = {
+        survival: { key: "survival", className: "text-2xl font-bold text-red-500 tracking-widest animate-pulse" },
+        sandbox: { key: "sandbox", className: "text-2xl font-bold text-blue-400 tracking-widest" },
+        campaign: { key: "campaign_mode", className: "text-2xl font-bold text-yellow-400 tracking-widest" },
+    };
+    const presentation = modes[mode] || modes.survival;
+    title.className = presentation.className;
+    title.textContent = i18n.t(presentation.key);
+    title.setAttribute("data-i18n", presentation.key);
+}
+
 function resetGame(mode = "survival") {
     STATE.sound.init();
     STATE.sound.playGameBGM();
     STATE.gameMode = mode;
+    setHudModeTitle(mode);
 
     // Campaign gating is applied when a level starts but nothing ever cleared
     // it, so leaving a level for sandbox or survival left most of the toolbar
