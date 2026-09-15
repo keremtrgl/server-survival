@@ -41,6 +41,12 @@ function claim(re, what) {
 const num = (re, what) => Number(claim(re, what)[1]);
 
 describe("the README's numbers are the game's numbers", () => {
+    it("keeps the documented release version aligned with CHANGELOG", () => {
+        const changelog = readFileSync(join(ROOT, "CHANGELOG.md"), "utf8");
+        expect(README).toContain("v3.1.0");
+        expect(changelog).toMatch(/^## \[3\.1\.0\]/m);
+    });
+
     it("counts the campaign it ships", () => {
         const m = claim(/(\d+) hand-crafted levels across (\d+) chapters/, "the campaign size");
         expect(Number(m[1])).toBe(CAMPAIGN_LEVELS.length);

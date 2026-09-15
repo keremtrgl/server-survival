@@ -1,5 +1,7 @@
 # Server Survival
 
+**Current release: v3.1.0**
+
 ![Gameplay Demo](assets/gameplay.gif)
 
 **Server Survival** is an interactive 3D simulation game where you play as a **Cloud Architect**. Your mission is to build and scale a resilient cloud infrastructure to handle increasing traffic loads while fighting off DDoS attacks, managing your budget, and keeping your services healthy.
@@ -9,6 +11,14 @@ Learn cloud by playing:
 [![PLAY NOW](https://img.shields.io/badge/PLAY_NOW-Server_Survival-2ea44f?style=for-the-badge)](https://pshenok.github.io/server-survival/)
 
 > 🏭 **New: [Datacenter Survival](https://github.com/pshenok/datacenter-survival)** — the sister game. This one teaches the *logical* layer of the cloud; that one teaches the *physical* layer it runs on: power chains, heat, cooling, PUE. [Play it here](https://pshenok.github.io/datacenter-survival/).
+
+## What's New in v3.1
+
+Version 3.1 gives players immediate feedback when a connection is rejected,
+shows campaign goals from the first frame, and makes the HUD and controls more
+usable across screen sizes and input methods. It also hardens run cleanup,
+Sandbox limits, and save loading so repeated sessions and imported games behave
+predictably.
 
 ## Game Modes
 
@@ -219,7 +229,7 @@ python3 -m http.server 8000    # then open http://localhost:8000
 
 There is still **zero build step** — the dev tooling is optional and for contributors only:
 
-- `npm install` once, then `npm run check` runs ESLint + the full Vitest suite (61 test files, 1087 tests).
+- `npm install` once, then `npm run check` runs ESLint + the full Vitest suite (68 test files, 1164 tests).
 - CI runs the same check on every PR.
 - The code is native ESM: `game.js` plus focused modules under `src/` (`sim/`, `core/`, `ui/`, `campaign/`, `persistence/`, `input/`).
 
