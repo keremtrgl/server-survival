@@ -34,6 +34,9 @@ import { CONFIG } from "../config.js";
 
 const TRAFFIC_KEYS = Object.keys(CONFIG.trafficTypes);
 const TRAFFIC_KEY_SET = new Set(TRAFFIC_KEYS);
+const LEGACY_TRAFFIC_KEY_SET = new Set(["WEB", "API", "FRAUD"]);
+const LEGACY_SCORE_KEY_SET = new Set(["total", "web", "api", "fraudBlocked"]);
+const LEGACY_SCORE_TRIGGER_KEY_SET = new Set(["web", "api", "fraudBlocked"]);
 const SERVICE_KEYS = Object.keys(CONFIG.services);
 const SERVICE_KEY_SET = new Set(SERVICE_KEYS);
 const MAX_SCALAR = Number.MAX_SAFE_INTEGER;
@@ -192,30 +195,41 @@ function isSaveId(value) {
   return typeof value === "string" && value.length > 0 && value.length <= CONFIG.limits.maxSaveBytes;
 }
 
+function hasAnyOwnKey(record, keys) {
+  return Object.keys(record).some((key) => keys.has(key));
+}
+
+function isValidLegacyNumberRecord(record, allowedKeys) {
+  return Object.keys(record).every((key) =>
+    allowedKeys.has(key) && typeof record[key] === "number" && Number.isFinite(record[key]));
+}
+
 function migrateOldSave(saveData) {
   if (saveData.version === undefined || saveData.version === "1.0") {
     if (isPlainRecord(saveData.trafficDistribution)) {
       const oldDist = saveData.trafficDistribution;
-      if ("WEB" in oldDist || "API" in oldDist || "FRAUD" in oldDist) {
+      if (hasAnyOwnKey(oldDist, LEGACY_TRAFFIC_KEY_SET)) {
+        if (!isValidLegacyNumberRecord(oldDist, LEGACY_TRAFFIC_KEY_SET)) return null;
         saveData.trafficDistribution = {
-          STATIC: oldDist.WEB || 0,
-          READ: (oldDist.API || 0) * 0.5,
-          WRITE: (oldDist.API || 0) * 0.3,
+          STATIC: oldDist.WEB ?? 0,
+          READ: (oldDist.API ?? 0) * 0.5,
+          WRITE: (oldDist.API ?? 0) * 0.3,
           UPLOAD: 0.05,
-          SEARCH: (oldDist.API || 0) * 0.2,
-          MALICIOUS: oldDist.FRAUD || 0,
+          SEARCH: (oldDist.API ?? 0) * 0.2,
+          MALICIOUS: oldDist.FRAUD ?? 0,
         };
       }
     }
 
     if (isPlainRecord(saveData.score)) {
       const oldScore = saveData.score;
-      if ("web" in oldScore || "api" in oldScore || "fraudBlocked" in oldScore) {
+      if (hasAnyOwnKey(oldScore, LEGACY_SCORE_TRIGGER_KEY_SET)) {
+        if (!isValidLegacyNumberRecord(oldScore, LEGACY_SCORE_KEY_SET)) return null;
         saveData.score = {
-          total: oldScore.total || 0,
-          storage: oldScore.web || 0,
-          database: oldScore.api || 0,
-          maliciousBlocked: oldScore.fraudBlocked || 0,
+          total: oldScore.total ?? 0,
+          storage: oldScore.web ?? 0,
+          database: oldScore.api ?? 0,
+          maliciousBlocked: oldScore.fraudBlocked ?? 0,
         };
       }
     }
@@ -318,7 +332,7 @@ export function normalizeSaveData(candidate) {
   } catch {
     return null;
   }
-  if (migrated.version !== "2.0") return null;
+  if (!migrated || migrated.version !== "2.0") return null;
 
   const gameMode = migrated.gameMode ?? "survival";
   if (gameMode !== "survival" && gameMode !== "sandbox") return null;
@@ -420,7 +434,8 @@ export function normalizeSaveData(candidate) {
     .some((value) => value === null)) return null;
 
   const selectedNodeId = migrated.selectedNodeId ?? null;
-  if (selectedNodeId !== null && (!isSaveId(selectedNodeId) || !serviceIds.has(selectedNodeId))) return null;
+  if (selectedNodeId !== null &&
+      (!isSaveId(selectedNodeId) || (selectedNodeId !== "internet" && !serviceIds.has(selectedNodeId)))) return null;
 
   return {
     version: "2.0",

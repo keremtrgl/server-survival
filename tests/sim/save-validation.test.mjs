@@ -172,6 +172,50 @@ describe("normalizeSaveData", () => {
     expect(candidate).toEqual(snapshot);
     expect(candidate).not.toHaveProperty("maliciousSpikeTimer");
   });
+
+  it("accepts the reserved internet node as a selection", () => {
+    const normalized = normalizeSaveData(currentSave({ selectedNodeId: "internet" }));
+
+    expect(normalized).not.toBeNull();
+    expect(normalized.selectedNodeId).toBe("internet");
+  });
+
+  it.each([
+    ["missing-service"],
+    [42],
+  ])("rejects a selected node that is not internet or a restored service: %s", (selectedNodeId) => {
+    expect(normalizeSaveData(currentSave({ selectedNodeId }))).toBeNull();
+  });
+
+  it.each([
+    [{ WEB: 0.5, API: 0.4, FRAUD: 0.1, TYPO: 0 }, "unknown traffic key"],
+    [{ WEB: [], API: 0.4, FRAUD: 0.1 }, "traffic array"],
+    [{ WEB: null, API: 0.4, FRAUD: 0.1 }, "null traffic value"],
+    [{ WEB: 0.5, API: "0.4", FRAUD: 0.1 }, "string traffic value"],
+  ])("rejects legacy traffic before migration: %s (%s)", (trafficDistribution) => {
+    expect(normalizeSaveData({
+      version: "1.0",
+      trafficDistribution,
+      services: [],
+      connections: [],
+      internetConnections: [],
+    })).toBeNull();
+  });
+
+  it.each([
+    [{ total: 9, web: 3, api: 4, fraudBlocked: 2, TYPO: 0 }, "unknown score key"],
+    [{ total: 9, web: [], api: 4, fraudBlocked: 2 }, "score array"],
+    [{ total: 9, web: null, api: 4, fraudBlocked: 2 }, "null score value"],
+    [{ total: 9, web: "3", api: 4, fraudBlocked: 2 }, "string score value"],
+  ])("rejects legacy score before migration: %s (%s)", (score) => {
+    expect(normalizeSaveData({
+      version: "1.0",
+      score,
+      services: [],
+      connections: [],
+      internetConnections: [],
+    })).toBeNull();
+  });
 });
 
 describe("save upload byte boundary", () => {

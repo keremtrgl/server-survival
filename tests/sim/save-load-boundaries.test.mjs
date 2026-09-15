@@ -22,6 +22,7 @@ import { saveGameState, loadGameState } from "../../src/persistence/save-load.js
 import { getRunReport, getRollingGoodput, metricsTick } from "../../src/core/metrics.js";
 import { finishRequest } from "../../src/core/actions.js";
 import { Request } from "../../src/entities/Request.js";
+import { i18n } from "../../src/i18n.js";
 import { CONFIG, place } from "../helpers/sim-world.mjs";
 
 describe("a loaded save carries its own history, and only its own", () => {
@@ -132,6 +133,36 @@ describe("save validation happens before the run boundary", () => {
 
         expect(STATE.services.map((service) => service.id)).toEqual([before]);
         expect(globalThis.alertCalls).toHaveLength(1);
+    });
+
+    it("treats an explicit null upload as corrupt even when a browser save exists", () => {
+        const before = place("db").id;
+        localStorage.setItem("serverSurvivalSave", JSON.stringify({
+            version: "2.0",
+            services: [],
+            connections: [],
+            internetConnections: [],
+        }));
+
+        loadGameState(null);
+
+        expect(STATE.services.map((service) => service.id)).toEqual([before]);
+        expect(globalThis.alertCalls).toEqual([i18n.t("load_failed_corrupted")]);
+    });
+
+    it("leaves the active board untouched when legacy fields fail pre-migration validation", () => {
+        const before = place("db").id;
+
+        loadGameState({
+            version: "1.0",
+            trafficDistribution: { WEB: 0.5, API: [], FRAUD: 0.1 },
+            services: [],
+            connections: [],
+            internetConnections: [],
+        });
+
+        expect(STATE.services.map((service) => service.id)).toEqual([before]);
+        expect(globalThis.alertCalls).toEqual([i18n.t("load_failed_corrupted")]);
     });
 
     it("preserves valid zero-valued save scalars", () => {
