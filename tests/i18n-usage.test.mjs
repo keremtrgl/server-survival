@@ -12,13 +12,13 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const en = await loadLocale(LOCALES.find((l) => l.code === "en"));
 
 function collectSources() {
-  const files = ["game.js", "index.html", "src/tutorial.js"];
+  const files = new Set(["game.js", "index.html", "src/tutorial.js", "src/ui/live-status.js"]);
   for (const dir of ["src/achievements", "src/campaign", "src/core", "src/entities", "src/input", "src/persistence", "src/services", "src/sim", "src/ui"]) {
     for (const f of readdirSync(join(ROOT, dir))) {
-      if (f.endsWith(".js")) files.push(`${dir}/${f}`);
+      if (f.endsWith(".js")) files.add(`${dir}/${f}`);
     }
   }
-  return files.map((f) => ({ file: f, src: readFileSync(join(ROOT, f), "utf8") }));
+  return [...files].map((f) => ({ file: f, src: readFileSync(join(ROOT, f), "utf8") }));
 }
 
 // Literal keys only — dynamic keys (i18n.t(prefix + x)) can't be statically
