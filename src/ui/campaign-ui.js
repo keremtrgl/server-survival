@@ -85,7 +85,7 @@ function renderCampaignLevels() {
         const cursor = unlocked ? "cursor-pointer hover:bg-gray-800/60" : "opacity-50 cursor-not-allowed";
         // Preview is supplementary: native button activation opens the full briefing.
         const hoverHandlers = `onmousemove="showCampaignLevelTooltip(event, ${lvl.id})" onmouseleave="hideCampaignLevelTooltip()"`;
-        const focusHandlers = unlocked ? `onfocus="showCampaignLevelTooltip(event, ${lvl.id})" onblur="hideCampaignLevelTooltip()" onkeydown="if(event.key === 'Escape') hideCampaignLevelTooltip()"` : "";
+        const focusHandlers = unlocked ? `onfocus="showCampaignLevelTooltip(event, ${lvl.id})" onblur="hideCampaignLevelTooltip()" onkeydown="if(event.key === 'Escape') { hideCampaignLevelTooltip(); event.stopPropagation(); event.preventDefault(); }"` : "";
         html += `
             <button type="button" data-campaign-level="${lvl.id}" aria-disabled="${!unlocked}" ${unlocked ? "" : "disabled"} ${clickHandler} ${hoverHandlers} ${focusHandlers}
                 class="w-full text-left border border-gray-700 rounded-lg p-3 ${cursor} transition flex items-center gap-3">
