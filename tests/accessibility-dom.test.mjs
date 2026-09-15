@@ -7,7 +7,7 @@ import { beforeEach, expect, it } from "vitest";
 import { resetWorld } from "./helpers/sim-world.mjs";
 import { i18n } from "../src/i18n.js";
 
-const { renderCampaignLevels, showCampaignLevelTooltip, openCampaignBriefing } =
+const { renderCampaignLevels, showCampaignLevelTooltip, hideCampaignLevelTooltip, openCampaignBriefing } =
     await import("../src/ui/campaign-ui.js");
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const html = readFileSync(resolve(root, "index.html"), "utf8");
@@ -95,4 +95,25 @@ it("positions a keyboard preview without pointer coordinates and moves focus to 
     openCampaignBriefing(1);
     expect(tooltip.style.display).toBe("none");
     expect(document.activeElement.id).toBe("campaign-briefing-title");
+});
+
+it("dismisses a campaign preview with Escape without opening the main menu", () => {
+    renderCampaignLevels();
+    const first = document.querySelector('[data-campaign-level="1"]');
+    // The script-free happy-dom fixture does not compile inline handlers.
+    // Evaluate the rendered production handler so this exercises event bubbling.
+    const onKeyDown = new Function("event", "hideCampaignLevelTooltip", first.getAttribute("onkeydown"));
+    first.addEventListener("keydown", (event) => onKeyDown(event, hideCampaignLevelTooltip));
+    const menu = document.getElementById("main-menu-modal");
+    menu.classList.add("hidden");
+    document.getElementById("campaign-select-modal").classList.remove("hidden");
+    showCampaignLevelTooltip({ currentTarget: first }, 1);
+    expect(document.getElementById("tooltip").style.display).toBe("block");
+
+    first.dispatchEvent(new KeyboardEvent("keydown", {
+        key: "Escape", bubbles: true, cancelable: true,
+    }));
+
+    expect(document.getElementById("tooltip").style.display).toBe("none");
+    expect(menu.classList.contains("hidden")).toBe(true);
 });
