@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The HUD, campaign controls, and compact layouts adapt more cleanly to small screens, keyboard navigation, and assistive technology.
-- Sandbox budget, traffic, traffic mix, and burst inputs are bounded to safe playable ranges.
+- Sandbox RPS, traffic-mix, and burst inputs are bounded to safe playable ranges.
 - CI now declares read-only repository-content permissions explicitly.
 
 ### Fixed

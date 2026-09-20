@@ -47,6 +47,12 @@ describe("the README's numbers are the game's numbers", () => {
         expect(changelog).toMatch(/^## \[3\.1\.0\]/m);
     });
 
+    it("keeps the changelog's Sandbox-boundary claim scoped to implemented limits", () => {
+        const changelog = readFileSync(join(ROOT, "CHANGELOG.md"), "utf8");
+        expect(changelog).toMatch(/Sandbox RPS, traffic-mix, and burst inputs are bounded/);
+        expect(changelog).not.toMatch(/Sandbox budget.*bounded/);
+    });
+
     it("counts the campaign it ships", () => {
         const m = claim(/(\d+) hand-crafted levels across (\d+) chapters/, "the campaign size");
         expect(Number(m[1])).toBe(CAMPAIGN_LEVELS.length);
