@@ -353,3 +353,34 @@ Başarı ölçütü: aynı seed + aynı komut dizisi aynı sonucu üretir; skor 
 ## Karar önerisi
 
 İlk geliştirme paketi olarak Faz 1 seçilmelidir. En yüksek kullanıcı etkisini, en düşük mimari riskle verir: oyun daha az kilitlenir, Campaign daha anlaşılır başlar, Sandbox kullanılabilir kalır ve kayıt dosyası güvenli biçimde yüklenir. Faz 2 hemen arkasından gelmelidir; yalnız ondan sonra replay/multiplayer gibi genişlemeler anlamlı ve sürdürülebilir olur.
+
+## v3.1 doğrulama kaydı — 2026-09-20
+
+Bu bölüm, `codex/v3-1-stabilization` çalışma ağacında 2026-09-20 18:36–19:00 TRT aralığında yeniden çalıştırılan kontrollerin kaydıdır. Üstteki v3.0 denetim tablosundaki 61 dosya / 1.087 test ve eski audit bulguları tarihsel snapshot olarak korunmuştur; aşağıdaki sayılar v3.1 için taze çıktılardır.
+
+### Otomatik kalite ve bağımlılık denetimi
+
+| Komut | Gerçek sonuç |
+| --- | --- |
+| `npm run check` | Çıkış kodu 0. ESLint bulgu üretmedi. Vitest: 68 test dosyası geçti (68/68), 1.165 test geçti (1.165/1.165). Son doğrulama başlangıcı 18:59:52; süre 23,00 sn. |
+| `npm audit --omit=dev` | Çıkış kodu 0; `found 0 vulnerabilities`. |
+| `npm audit` | Çıkış kodu 0; `found 0 vulnerabilities`. Geliştirici bağımlılığı bulgusu kalmadı. |
+
+### Gerçek tarayıcı kabul sonuçları
+
+Uygulama yalnız bu çalışma ağacından `python -m http.server 4173` ile servis edildi; test bitiminde sunucu ve geçici tarayıcı süreçleri kapatıldı.
+
+1. Sandbox restart ve Campaign geçişi için on tam döngü çalıştırıldı. Döngü 1–10'un her birinde Sandbox restart sonrası boş güncel sahne, Campaign Level 1 geçişinde `Campaign` başlığı ile `Level 1: The First Server` hedefleri ve Sandbox'a dönüşte yeniden boş güncel sahne doğrulandı. Eski servis, istek veya bağlantı görseli kalmadı.
+2. 1280×720 Sandbox görünümünde son Burst eylemi `DDoS` düğmesinin alt kenarı 543,2 px, toolbar üst kenarı 589,8 px ölçüldü; kontrol görünür kaldı ve toolbar tarafından örtülmedi. Panel `overflow-y: auto` kullandı.
+3. Dar ekran kontrolleri gerçek viewport emülasyonunda sınandı: 320×568'de panel 544/406 px içerik/görünür yükseklik ve 137,6 px scroll; 375×667'de 544/506 px ve 38,4 px scroll; 768×600'de 552/438 px ve 113,6 px scroll değerine ulaştı. Her üçünde son `DDoS` eylemi viewport içinde erişilebilir kaldı. Klavye ile odaklanan `#tool-select`, viewport içinde 2,4 px solid görünür outline gösterdi.
+4. Campaign Level 1 başlatıldı; Play'e basılmadan önce `Campaign` HUD başlığı, seviye başlığı, ana hedefler ve bonus hedefler görünürdü.
+5. Aynı node'a bağlantı, mevcut bağlantının tekrarı, ters bağlantı ve geçersiz topoloji ayrı ayrı denendi. Canlı bölgede sırasıyla `You can't connect a node to itself.`, `Those nodes are already connected.`, `A reverse connection between those nodes already exists.` ve `Invalid connection topology: Internet -> WAF -> ALB -> Compute -> (DB/Storage)` mesajları görüldü. Canvas yalnız iki bilerek oluşturulan bağlantıyı göstermeye devam etti; reddedilen denemeler wire eklemedi.
+6. Sandbox'ta 10 READ istekli Burst başlatıldı ve hemen restart yapıldı. Son planlı gecikme 270 ms iken 400 ms beklendi; yeni sahnede eski istek görünmedi, servis/bağlantı tabloları boş kaldı.
+7. Firewall ve Load Balancer ile iki geçerli bağlantıdan oluşan board hazırlanıp hatalı save dosyası içe aktarıldı. İçe aktarma alert ile reddedildi; menüden Resume sonrasında iki servis ve iki bağlantı aynen görünür kaldı.
+8. Reduced-motion kontrolü, yüklü Microsoft Edge 153.0.4234.48'in native `--force-prefers-reduced-motion=reduce` emülasyonuyla yapıldı. `matchMedia` sonucu true idi; başlık, Play düğmesi ve servis sağlık durumu için `animation-name: none`, `animation-duration: 0s` ve `transition-duration: 0s` ölçülürken üç durum göstergesi de görünür (`display`, `visibility`, `opacity` ve pozitif boyut) kaldı.
+
+### Ertelenen işler
+
+- Gerçek tarayıcı kontrolleri bu doğrulamada elle/yerel otomasyonla yapıldı; CI içinde kalıcı görsel regresyon, klavye/a11y ve WebGL kaynak sayacı kalite kapısı hâlâ eklenmiş değildir.
+- Üretim paketleme ve CDN bağımlılıklarını yerel, sürümlü build çıktısına taşıma çalışması ertelenmiştir.
+- Deterministik simülasyon ayrımı, replay altyapısı, architecture linter/Service Inspector ve ölçülmüş performans bütçesi bu stabilizasyon kaydının kapsamı dışındadır.
