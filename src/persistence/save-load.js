@@ -8,6 +8,7 @@ import { resetMetrics } from "../core/metrics.js";
 import { beginRunEpoch, disposeRunScene } from "../core/run-lifecycle.js";
 import { resetResilience } from "../sim/circuit-breaker.js";
 import { i18n } from "../i18n.js";
+import { clearFailureBadges } from "../ui/failure-badges.js";
 // Achievements (#158): loading a save is a session boundary — baselines must
 // re-capture from the RESTORED board (elapsedGameTime is restored below but
 // STATE.failures is not), or a restored 300s save would instantly satisfy
@@ -28,6 +29,7 @@ import {
     normalizeSandboxRps,
     requestGroup,
     serviceGroup,
+    setHudModeTitle,
     syncInput,
 } from "../../game.js";
 
@@ -219,6 +221,7 @@ function loadGameState(saveData) {
         STATE.gameStartTime = performance.now();
 
         STATE.gameMode = saveData.gameMode;
+        setHudModeTitle(STATE.gameMode);
 
         // A SAVE IS A DIFFERENT RUN, so the campaign stops here — the same
         // rule resetGame() follows, for the same reason and one path short of
@@ -383,6 +386,7 @@ function clearCurrentGame() {
     STATE.requests = [];
     STATE.connections = [];
     STATE.internetNode.connections = [];
+    clearFailureBadges();
 }
 
 function restoreServices(savedServices) {

@@ -4,12 +4,21 @@
 // localStorage.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { loadGameState, saveGameState } from "../../src/persistence/save-load.js";
+import { FAIL_REASONS } from "../../src/core/failure-reasons.js";
+import { i18n } from "../../src/i18n.js";
+import {
+  clearFailureBadges,
+  getFailureBadges,
+  spawnServiceBadge,
+} from "../../src/ui/failure-badges.js";
+import { badgeGroup } from "../../game.js";
 import { STATE, CONFIG, resetWorld, place, connect } from "../helpers/sim-world.mjs";
 
 const SAVE_KEY = "serverSurvivalSave";
 
 beforeEach(() => {
   resetWorld();
+  clearFailureBadges();
   globalThis.localStorage.removeItem(SAVE_KEY);
   globalThis.alertCalls.length = 0;
 });
@@ -21,6 +30,7 @@ afterEach(() => {
     globalThis.cancelAnimationFrame(STATE.animationId);
     STATE.animationId = null;
   }
+  clearFailureBadges();
 });
 
 function baseSave(extra = {}) {
@@ -145,6 +155,50 @@ describe("fallback defaults (the PR-1 dead-fallback fix)", () => {
     loadGameState(); // no arg, empty localStorage
     expect(globalThis.alertCalls.length).toBeGreaterThan(0);
     expect(STATE.money).toBe(4321);
+  });
+
+  it("rejects an invalid topology before clearing the active board", () => {
+    const active = place("waf");
+    STATE.money = 4321;
+
+    const loaded = loadGameState(baseSave({
+      services: [
+        { id: "saved_waf", type: "waf", position: [0, 0, 0] },
+        { id: "saved_db", type: "db", position: [8, 0, 0] },
+      ],
+      connections: [{ from: "saved_waf", to: "saved_db" }],
+    }));
+
+    expect(loaded).toBe(false);
+    expect(STATE.services).toEqual([active]);
+    expect(STATE.money).toBe(4321);
+  });
+
+  it("clears and disposes failure badges at a valid load boundary", () => {
+    const service = place("search");
+    const badge = spawnServiceBadge(service, FAIL_REASONS.SEARCH_ONLY);
+    expect(getFailureBadges()).toHaveLength(1);
+
+    expect(loadGameState(baseSave())).toBe(true);
+
+    expect(getFailureBadges()).toHaveLength(0);
+    expect(badgeGroup.children).toHaveLength(0);
+    expect(badge.texture.disposed).toBe(true);
+    expect(badge.material.disposed).toBe(true);
+  });
+
+  it.each([
+    ["sandbox", "sandbox"],
+    ["survival", "survival"],
+  ])("synchronizes the HUD heading when loading a %s save", (gameMode, titleKey) => {
+    const title = document.getElementById("game-mode-title");
+    title.textContent = "stale heading";
+    title.setAttribute("data-i18n", "campaign_mode");
+
+    expect(loadGameState(baseSave({ gameMode }))).toBe(true);
+
+    expect(title.getAttribute("data-i18n")).toBe(titleKey);
+    expect(title.textContent).toBe(i18n.t(titleKey));
   });
 });
 

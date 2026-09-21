@@ -1,4 +1,5 @@
 import { CONFIG } from "../config.js";
+import { isValidEdge } from "../sim/topology.js";
 
 /**
  * @typedef {Object} SavedService
@@ -297,24 +298,36 @@ function normalizeServices(value) {
   return services;
 }
 
-function normalizeConnections(value, serviceIds) {
+function normalizeConnections(value, servicesById) {
   if (value === undefined) return [];
   if (!Array.isArray(value) || value.length > CONFIG.limits.maxSaveConnections) return null;
 
   const connections = [];
+  const pairs = new Set();
   for (const record of value) {
     if (!isPlainRecord(record) || !isSaveId(record.from) || !isSaveId(record.to)) return null;
-    if ((record.from !== "internet" && !serviceIds.has(record.from)) ||
-        !serviceIds.has(record.to) || record.from === record.to) return null;
+    if ((record.from !== "internet" && !servicesById.has(record.from)) ||
+        !servicesById.has(record.to) || record.from === record.to) return null;
+
+    const fromType = record.from === "internet" ? "internet" : servicesById.get(record.from).type;
+    const toType = servicesById.get(record.to).type;
+    const pair = `${record.from}\u0000${record.to}`;
+    const reversePair = `${record.to}\u0000${record.from}`;
+    if (!isValidEdge(fromType, toType) || pairs.has(pair) || pairs.has(reversePair)) return null;
+
+    pairs.add(pair);
     connections.push({ from: record.from, to: record.to });
   }
   return connections;
 }
 
-function normalizeInternetConnections(value, serviceIds) {
+function normalizeInternetConnections(value, servicesById) {
   if (value === undefined) return [];
   if (!Array.isArray(value) || value.length > CONFIG.limits.maxSaveServices) return null;
-  if (!value.every((id) => isSaveId(id) && serviceIds.has(id))) return null;
+  const uniqueIds = new Set(value);
+  if (uniqueIds.size !== value.length ||
+      !value.every((id) => isSaveId(id) && servicesById.has(id) &&
+        isValidEdge("internet", servicesById.get(id).type))) return null;
   return [...value];
 }
 
@@ -341,9 +354,10 @@ export function normalizeSaveData(candidate) {
 
   const services = normalizeServices(migrated.services);
   if (!services) return null;
-  const serviceIds = new Set(services.map((service) => service.id));
-  const connections = normalizeConnections(migrated.connections, serviceIds);
-  const internetConnections = normalizeInternetConnections(migrated.internetConnections, serviceIds);
+  const servicesById = new Map(services.map((service) => [service.id, service]));
+  const serviceIds = new Set(servicesById.keys());
+  const connections = normalizeConnections(migrated.connections, servicesById);
+  const internetConnections = normalizeInternetConnections(migrated.internetConnections, servicesById);
   if (!connections || !internetConnections) return null;
 
   const trafficDistribution = normalizeKnownNumberRecord(

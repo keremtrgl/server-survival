@@ -22,13 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Starting or resetting runs now disposes run-owned timers, listeners, requests, scene groups, and transient visuals without leaking or double-cleaning resources.
+- Starting, resetting, or loading runs now disposes run-owned timers, requests, scene groups, failure badges, and transient visuals without leaking or double-cleaning resources.
 - Save imports reject malformed state before changing the current run.
 - The campaign preview handles Escape without dismissing unrelated UI, and locale metadata stays synchronized without debug output.
 
 ### Security
 
-- Save payloads are schema-validated and sanitized before restoration, including nested numeric, service, connection, and campaign data.
+- Save payloads are schema-validated and sanitized before restoration, including nested numeric, service, and connection data; unsupported campaign-mode saves are rejected.
 - Updated Vitest and its resolved development-tool dependency graph to patched compatible versions; the shipped game still has no npm runtime dependencies.
 
 ### Verification
