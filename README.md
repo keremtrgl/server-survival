@@ -20,6 +20,28 @@ usable across screen sizes and input methods. It also hardens run cleanup,
 Sandbox limits, and save loading so repeated sessions and imported games behave
 predictably.
 
+### v3.1 stabilization details
+
+- **Bounded Sandbox load** — interactive stress controls now cap RPS at 500,
+  burst size at 200, and per-frame spawn catch-up at 100. This prevents a
+  single input from producing an unbounded amount of simulation and render
+  work; it is a safety bound, not an unmeasured FPS claim.
+- **Clean run boundaries** — restart, retry, campaign transitions, and save
+  loading dispose their run-owned scheduled work, requests, connections, scene
+  objects, transient visuals, and failure badges. Old burst callbacks cannot
+  leak into a new run.
+- **Atomic save import** — file size, version, finite numeric data, service
+  types, and legal topology links are validated before the active board is
+  changed. Invalid or unsupported campaign saves are rejected without clearing
+  the current game.
+- **Clearer controls** — rejected links receive localized live feedback;
+  campaign objectives render before Play; compact layouts, keyboard focus,
+  reduced motion, and accessible control labels improve usability.
+- **Release confidence** — the final local check runs ESLint and 68 Vitest
+  files (1,172 tests). The Turkish audit record in
+  `docs/PROFESYONELLESTIRME_DENETIMI_TR.md` documents the browser acceptance
+  scenarios and remaining roadmap work.
+
 ## Game Modes
 
 - **Survival** — the core experience: survive as long as possible against escalating traffic, DDoS spikes, random events, and service degradation.
@@ -220,7 +242,7 @@ double-clicking `index.html` gets you the UI shell over an empty canvas. Any
 static server works, and one is already on your machine:
 
 ```bash
-git clone https://github.com/pshenok/server-survival.git
+git clone https://github.com/keremtrgl/server-survival.git
 cd server-survival
 python3 -m http.server 8000    # then open http://localhost:8000
 ```
