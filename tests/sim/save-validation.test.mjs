@@ -154,6 +154,47 @@ describe("normalizeSaveData", () => {
     expect(normalizeSaveData(candidate)).toBeNull();
   });
 
+  it.each([
+    [
+      currentSave({
+        services: [
+          { id: "svc_waf", type: "waf", position: [0, 0, 0] },
+          { id: "svc_db", type: "db", position: [8, 0, 0] },
+        ],
+        connections: [{ from: "svc_waf", to: "svc_db" }],
+      }),
+      "illegal endpoint pair",
+    ],
+    [
+      currentSave({
+        services: [
+          { id: "svc_alb", type: "alb", position: [0, 0, 0] },
+          { id: "svc_compute", type: "compute", position: [8, 0, 0] },
+        ],
+        connections: [
+          { from: "svc_alb", to: "svc_compute" },
+          { from: "svc_alb", to: "svc_compute" },
+        ],
+      }),
+      "duplicate pair",
+    ],
+    [
+      currentSave({
+        services: [
+          { id: "svc_alb", type: "alb", position: [0, 0, 0] },
+          { id: "svc_sqs", type: "sqs", position: [8, 0, 0] },
+        ],
+        connections: [
+          { from: "svc_alb", to: "svc_sqs" },
+          { from: "svc_sqs", to: "svc_alb" },
+        ],
+      }),
+      "reverse duplicate",
+    ],
+  ])("rejects topology that live connection creation rejects: %s (%s)", (candidate) => {
+    expect(normalizeSaveData(candidate)).toBeNull();
+  });
+
   it("does not mutate the candidate while migrating it", () => {
     const candidate = {
       version: "1.0",

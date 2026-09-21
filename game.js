@@ -1881,6 +1881,7 @@ export {
     rpsMilestoneMultiplier,
     scene,
     serviceGroup,
+    setHudModeTitle,
     smoothTowardsRPS,
     syncInput,
 };
