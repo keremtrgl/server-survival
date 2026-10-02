@@ -5,12 +5,12 @@ import globals from "globals";
 //
 // Every first-party file is now a real ES module with explicit imports, so
 // no-undef is ON: any bare identifier that isn't imported or a known browser
-// global is an error. THREE stays a classic CDN global (r128), so it is
-// declared here instead of imported. no-unused-vars stays off until the
-// split PRs land (game.js still exports a wide surface).
+// global is an error. THREE stays a classic-script global (r128, vendored at
+// vendor/three/), so it is declared here instead of imported. no-unused-vars
+// stays off until the split PRs land (game.js still exports a wide surface).
 export default [
   {
-    ignores: ["node_modules/**", "assets/**", "market/**"],
+    ignores: ["node_modules/**", "assets/**", "market/**", "vendor/**", "playwright-report/**", "test-results/**"],
   },
   js.configs.recommended,
   {
@@ -28,9 +28,18 @@ export default [
     },
   },
   {
-    files: ["tests/**/*.mjs", "eslint.config.mjs"],
+    files: ["tests/**/*.mjs", "e2e/**/*.mjs", "scripts/**/*.mjs", "*.config.mjs", "eslint.config.mjs"],
     languageOptions: {
       sourceType: "module",
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
+    files: ["*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
       globals: {
         ...globals.node,
       },
