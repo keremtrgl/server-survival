@@ -31,12 +31,19 @@ function claimsIn(text) {
         // while level 6 shouts "60% READ". Both are claims about the same
         // config field, and a case-sensitive sweep quietly checked only half
         // of them — which is how a guard ends up guarding nothing.
-        const re = new RegExp(`(?:(\\d+)\\s*%[^.。]{0,24}?${type})|(?:${type}[^.。]{0,24}?(\\d+)\\s*%)`, "gi");
+        // Turkish writes the sign FIRST ("%60 READ"), which neither suffix
+        // form sees — so a tr briefing would have passed by matching nothing.
+        // The prefix forms below make the sweep read it too.
+        const re = new RegExp(
+            `(?:(\\d+)\\s*%[^.。]{0,24}?${type})|(?:${type}[^.。]{0,24}?(\\d+)\\s*%)` +
+            `|(?:%\\s*(\\d+)[^.。]{0,24}?${type})|(?:${type}[^.。]{0,24}?%\\s*(\\d+))`,
+            "gi"
+        );
         for (const m of text.matchAll(re)) {
-            out.push({ kind: "share", type, claimed: Number(m[1] ?? m[2]) });
+            out.push({ kind: "share", type, claimed: Number(m[1] ?? m[2] ?? m[3] ?? m[4]) });
         }
     }
-    for (const m of text.matchAll(/(\d+)\s*(?:requests?|запит|запрос|Anfragen|requêtes|richieste|requisições|요청|अनुरोध)/gi)) {
+    for (const m of text.matchAll(/(\d+)\s*(?:requests?|запит|запрос|Anfragen|requêtes|richieste|requisições|요청|अनुरोध|istek)/gi)) {
         out.push({ kind: "burst", claimed: Number(m[1]) });
     }
     return out;
@@ -55,6 +62,18 @@ describe("a briefing quotes the level it introduces", () => {
             if (text) found += claimsIn(text).length;
         }
         expect(found, "no briefing quotes a number the config can answer").toBeGreaterThan(5);
+    });
+
+    // The same guard for the prefix-percent form ("%60 READ"): without it,
+    // the Turkish sweep could silently find nothing and pass.
+    it("the sweep reads Turkish prefix percentages", async () => {
+        const tr = await loadLocale(LOCALES.find((l) => l.code === "tr"));
+        let found = 0;
+        for (const level of CAMPAIGN_LEVELS) {
+            const text = tr[`level_${level.id}_scenario`];
+            if (text) found += claimsIn(text).filter((c) => c.kind === "share").length;
+        }
+        expect(found, "no Turkish briefing share was recognised").toBeGreaterThan(5);
     });
 
     for (const locale of LOCALES) {

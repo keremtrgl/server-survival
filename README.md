@@ -226,9 +226,9 @@ Built something you're proud of? The share panel exports your architecture two w
 ## Tech Stack
 
 - **Core:** Vanilla JavaScript (native ES modules — an explicit module graph under `src/`, no bundler)
-- **Rendering:** [Three.js](https://threejs.org/) for 3D visualization.
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/) for the glassmorphism UI.
-- **Build:** No build step required! The game is served raw from this repo by GitHub Pages.
+- **Rendering:** [Three.js](https://threejs.org/) r128 for 3D visualization, vendored in `vendor/three/` with a pinned integrity hash.
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) for the glassmorphism UI, precompiled to `vendor/tailwind/tailwind.css`.
+- **Build:** No build step at serve time. The game is served raw from this repo by GitHub Pages and loads nothing from a third-party CDN.
 
 ## Getting Started
 
@@ -245,14 +245,17 @@ static server works, and one is already on your machine:
 git clone https://github.com/keremtrgl/server-survival.git
 cd server-survival
 python3 -m http.server 8000    # then open http://localhost:8000
+# or, with Node: npm run serve  → http://127.0.0.1:4173
 ```
 
 ## For Contributors
 
 There is still **zero build step** — the dev tooling is optional and for contributors only:
 
-- `npm install` once, then `npm run check` runs ESLint + the full Vitest suite (68 test files, 1172 tests).
-- CI runs the same check on every PR.
+- `npm install` once, then `npm run check` runs ESLint + the full Vitest suite (72 test files, 1201 tests).
+- `npm run test:e2e` runs the Playwright browser suite in real Chromium: boot, input, layout on desktop and phone, accessibility (axe-core), save/load, languages, GPU-resource leaks and visual regression.
+- Changed or added Tailwind classes? Run `npm run build:css` and commit `vendor/tailwind/tailwind.css`; CI fails when the committed stylesheet is stale.
+- CI runs the unit, simulation, CSS-freshness and browser checks on every PR.
 - The code is native ESM: `game.js` plus focused modules under `src/` (`sim/`, `core/`, `ui/`, `campaign/`, `persistence/`, `input/`).
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow.

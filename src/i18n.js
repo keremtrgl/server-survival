@@ -9,13 +9,41 @@ import { IT_TRANSLATIONS } from "./locales/it.js";
 import { NE_TRANSLATIONS } from "./locales/nep.js";
 import { UK_TRANSLATIONS } from "./locales/uk.js";
 import { HI_TRANSLATIONS } from "./locales/hi.js";
+import { TR_TRANSLATIONS } from "./locales/tr.js";
+
+/**
+ * Pick the starting locale: a saved choice wins; otherwise the first of the
+ * browser's preferred languages the game ships, matched exactly ("pt-BR")
+ * and then by base language ("tr-TR" → "tr", "pt-PT" → "pt-BR"); otherwise
+ * English. Exported for tests.
+ */
+export function detectLocale(saved, preferred, available) {
+    if (saved && available.includes(saved)) return saved;
+    const lower = available.map((code) => code.toLowerCase());
+    for (const tag of preferred || []) {
+        if (typeof tag !== "string" || !tag) continue;
+        const exact = lower.indexOf(tag.toLowerCase());
+        if (exact !== -1) return available[exact];
+        const base = tag.toLowerCase().split("-")[0];
+        const byBase = lower.findIndex((code) => code.split("-")[0] === base);
+        if (byBase !== -1) return available[byBase];
+    }
+    return "en";
+}
+
+function readSavedLocale() {
+    try {
+        return localStorage.getItem('game_locale');
+    } catch {
+        return null; // storage blocked (privacy mode): fall back to detection
+    }
+}
 
 /**
  * Simple i18n manager for the game
  */
 export class I18nManager {
     constructor() {
-        this.currentLocale = localStorage.getItem('game_locale') || 'en';
         this.translations = {
             en: typeof EN_TRANSLATIONS !== 'undefined' ? EN_TRANSLATIONS : {},
             zh: typeof ZH_TRANSLATIONS !== 'undefined' ? ZH_TRANSLATIONS : {},
@@ -27,14 +55,24 @@ export class I18nManager {
             it: typeof IT_TRANSLATIONS !== 'undefined' ? IT_TRANSLATIONS : {},
             ne: typeof NE_TRANSLATIONS !== 'undefined' ? NE_TRANSLATIONS : {},
             uk: typeof UK_TRANSLATIONS !== 'undefined' ? UK_TRANSLATIONS : {},
-            hi: typeof HI_TRANSLATIONS !== 'undefined' ? HI_TRANSLATIONS : {}
+            hi: typeof HI_TRANSLATIONS !== 'undefined' ? HI_TRANSLATIONS : {},
+            tr: typeof TR_TRANSLATIONS !== 'undefined' ? TR_TRANSLATIONS : {}
         };
+        this.currentLocale = detectLocale(
+            readSavedLocale(),
+            typeof navigator !== 'undefined' ? navigator.languages || [navigator.language] : [],
+            Object.keys(this.translations)
+        );
     }
 
     setLocale(locale) {
         if (this.translations[locale]) {
             this.currentLocale = locale;
-            localStorage.setItem('game_locale', locale);
+            try {
+                localStorage.setItem('game_locale', locale);
+            } catch {
+                // storage blocked: the choice still applies for this session
+            }
             document.documentElement.lang = locale;
             this.applyTranslations();
             // Dispatch event for components that need to update manually.
@@ -49,7 +87,11 @@ export class I18nManager {
     }
 
     t(key, variables = {}) {
-        let text = this.translations[this.currentLocale][key] || key;
+        // Missing in the active locale → English → the raw key, so a gap in
+        // a translation never shows a player an identifier.
+        let text = this.translations[this.currentLocale]?.[key]
+            || this.translations.en[key]
+            || key;
         
         // Handle variable interpolation
         Object.keys(variables).forEach(varName => {
@@ -85,8 +127,9 @@ export class I18nManager {
             el.setAttribute('title', this.t(titleKey));
         });
 
-        // Update document title
+        // Update document title and language (screen readers, hyphenation)
         document.title = this.t('title');
+        document.documentElement.lang = this.currentLocale;
 
         // Update language select if it exists
         const langSelect = document.getElementById('lang-select');

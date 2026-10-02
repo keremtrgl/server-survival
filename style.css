@@ -14,6 +14,36 @@
   width: min(20rem, calc(100vw - 2rem));
 }
 
+/* Page zoom is allowed (WCAG 1.4.4), so the board must claim its own
+   gestures: pinch and drag on the 3D canvas drive the camera, not the page. */
+#canvas-container,
+#canvas-container canvas {
+  touch-action: none;
+}
+
+/* The campaign/survival objectives panel sits in the same bottom-left slot
+   as the Sandbox panel and needs the same toolbar clearance: at 1280x720 its
+   last bonus line used to end under the build toolbar. */
+#objectivesPanel {
+  box-sizing: border-box;
+  bottom: calc(var(--toolbar-safe-height) + env(safe-area-inset-bottom));
+  max-height: max(6rem, calc(100dvh - var(--toolbar-safe-height) - 24rem - env(safe-area-inset-bottom)));
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Same clearance for the right-hand HUD column (score, health, metrics,
+   finances): it stops above the toolbar and scrolls instead of letting the
+   finances totals slide underneath it on a 720px-tall screen. Wheel and touch
+   scrolling chain up from the panels, which keep their pointer events. */
+#hud-right-column {
+  max-height: calc(100dvh - var(--toolbar-safe-height) - 1rem - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,

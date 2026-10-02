@@ -972,4 +972,7 @@ export const UK_TRANSLATIONS = {
     "campaign_fail_rep": "Репутація впала нижче {n}%",
     "campaign_fail_money": "Баланс упав нижче ${n}",
     "campaign_fail_timeout": "Час вийшов",
+
+    // Accessible name of the language switcher (index.html #lang-select)
+    "language": "Мова",
 };

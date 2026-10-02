@@ -26,6 +26,7 @@ import { spawnFailureBadge, spawnServiceBadge } from "../ui/failure-badges.js";
 // there instead of dropped. Runtime-only cycle (actions.js ⇄ dlq.js) — hoisted
 // declarations, dereferenced long after both modules evaluate.
 import { parkInDLQ } from "../sim/dlq.js";
+import { setRequestColor } from "../render/request-visuals.js";
 
 function getUpkeepMultiplier() {
     // TWO different things live here, and they had one gate between them.
@@ -381,7 +382,7 @@ function failRequest(req, reason = null) {
         req.type === TRAFFIC_TYPES.MALICIOUS ? "MALICIOUS_PASSED" : "FAILED";
     updateScore(req, failType);
     STATE.sound.playFail();
-    req.mesh.material.color.setHex(CONFIG.colors.requestFail);
+    setRequestColor(req, CONFIG.colors.requestFail);
     // A MALICIOUS request that reaches here got through — whatever routing
     // verdict actually dropped it, the lesson is the breach, which is also
     // exactly what updateScore just charged the player for.
@@ -448,7 +449,7 @@ function throttleRequest(req, reason = null) {
     // ninety shed read 100%.
     recordOutcome("unanswered");
     STATE.sound.playFail();
-    req.mesh.material.color.setHex(CONFIG.colors.apigw); // Pink flash for throttled
+    setRequestColor(req, CONFIG.colors.apigw); // Pink flash for throttled
     // Soft fail (#156): the badge paints this one amber, not red — the
     // gateway did its job, the player just hit the rate limit.
     spawnFailureBadge(req, reason);

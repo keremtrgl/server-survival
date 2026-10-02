@@ -384,3 +384,24 @@ Uygulama yalnız bu çalışma ağacından `python -m http.server 4173` ile serv
 - Gerçek tarayıcı kontrolleri bu doğrulamada elle/yerel otomasyonla yapıldı; CI içinde kalıcı görsel regresyon, klavye/a11y ve WebGL kaynak sayacı kalite kapısı hâlâ eklenmiş değildir.
 - Üretim paketleme ve CDN bağımlılıklarını yerel, sürümlü build çıktısına taşıma çalışması ertelenmiştir.
 - Deterministik simülasyon ayrımı, replay altyapısı, architecture linter/Service Inspector ve ölçülmüş performans bütçesi bu stabilizasyon kaydının kapsamı dışındadır.
+
+## Sonraki sürüm (Unreleased) kaydı — 2026-10-02
+
+v3.1'de "Ertelenen işler" altında kalan maddelerin durumu:
+
+| Madde | Durum | Kanıt |
+| --- | --- | --- |
+| CDN bağımlılıklarını yerel, sürümlü çıktıya taşıma | Tamamlandı | three.js r128 `vendor/three/` altında, sabitlenmiş sha384 SRI ile; Tailwind Play CDN yerine derlenmiş `vendor/tailwind/tailwind.css`. Sayfa hiçbir üçüncü taraf betik veya stil dosyası yüklemiyor (`tests/vendor-integrity.test.mjs`, `e2e/boot.spec.mjs`). Sunum anında derleme adımı yok. |
+| CI içinde kalıcı tarayıcı, görsel regresyon, klavye/a11y ve WebGL kaynak sayacı kapısı | Tamamlandı | `e2e/` Playwright paketi ve CI'daki `e2e` işi. axe-core WCAG 2.1 A/AA taramaları dört ekranda temiz. Kaynak sızıntısı testi, servis temizliği bilerek bozulduğunda 10 sızan geometriyle kırmızıya döndü. |
+| Ölçülmüş performans bütçesi | Kısmen | `?perf=1` paneli FPS, kare süresi p50/p95 ve renderer.info değerlerini gösteriyor; istek görselleri ortak GPU kaynaklarını kullanıyor. Donanım sınıfına göre sayısal FPS hedefi henüz belirlenmedi. |
+| Türkçe dil desteği | Tamamlandı | `src/locales/tr.js`, 937/937 anahtar; tarayıcı dili Türkçe olan ilk ziyaretçi oyunu Türkçe açıyor. |
+
+Bu çalışma sırasında bulunup düzeltilen erişilebilirlik ve yerleşim sorunları:
+
+- Dil seçicinin erişilebilir adı yoktu (kritik).
+- Sandbox'taki 19 kaydırıcı ve sayı alanı etiketsizdi (kritik).
+- Menü, diyalog ve eğitim düğmelerinde WCAG AA kontrastı yetersizdi.
+- Sayfa yakınlaştırması `user-scalable=no` ile engelleniyordu.
+- 1280×720'de hedef paneli ve sağ HUD sütunu alt araç çubuğunun altına giriyordu.
+
+Hâlâ açık olanlar: deterministik simülasyon / replay altyapısı, architecture linter ve Service Inspector, Three.js'in r128'den güncel sürüme kademeli geçişi.

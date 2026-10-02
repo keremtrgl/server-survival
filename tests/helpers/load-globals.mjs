@@ -17,6 +17,7 @@ export const LOCALES = [
   // different file than the other ten is a gap that widens every time the
   // shared suite gains a check.
   { code: "uk", load: async () => (await import("../../src/locales/uk.js")).UK_TRANSLATIONS },
+  { code: "tr", load: async () => (await import("../../src/locales/tr.js")).TR_TRANSLATIONS },
 ];
 
 export function loadLocale(locale) {
