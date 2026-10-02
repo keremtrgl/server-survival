@@ -706,7 +706,7 @@ function resetGame(mode = "survival") {
     if (autoRepairBtn) {
         autoRepairBtn.textContent = i18n.t('upkeep_off');
         autoRepairBtn.classList.remove("text-green-400");
-        autoRepairBtn.classList.add("text-gray-400");
+        autoRepairBtn.classList.add("text-gray-300");
     }
 
     // Reset repair cost table

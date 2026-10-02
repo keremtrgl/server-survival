@@ -329,13 +329,13 @@ function toggleAutoRepair() {
     if (btn) {
         if (STATE.autoRepairEnabled) {
             btn.textContent = i18n.t('upkeep_on');
-            btn.classList.remove("text-gray-400");
+            btn.classList.remove("text-gray-300");
             btn.classList.add("text-green-400");
             addInterventionWarning(i18n.t('auto_repair_hint'), "info", 2000);
         } else {
             btn.textContent = i18n.t('upkeep_off');
             btn.classList.remove("text-green-400");
-            btn.classList.add("text-gray-400");
+            btn.classList.add("text-gray-300");
             addInterventionWarning(i18n.t('event_ended'), "info", 2000);
         }
     }

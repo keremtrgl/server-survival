@@ -989,4 +989,7 @@ export const ZH_TRANSLATIONS = {
     "campaign_fail_rep": "声誉跌破 {n}%",
     "campaign_fail_money": "资金跌破 ${n}",
     "campaign_fail_timeout": "时间耗尽",
+
+    // Accessible name of the language switcher (index.html #lang-select)
+    "language": "语言",
 };

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Server Survival — learn cloud architecture by playing</title>
   <meta name="description"
     content="A browser game that teaches real cloud architecture: load balancing, caching, autoscaling, circuit breakers, multi-region failover and GPU inference economics. 25 campaign levels, 12 languages, no install." />
@@ -213,7 +213,7 @@
       </div>
     </div>
 
-    <div class="absolute top-4 right-4 flex flex-col gap-3 items-end pointer-events-none">
+    <div id="hud-right-column" class="absolute top-4 right-4 flex flex-col gap-3 items-end pointer-events-none">
       <!-- Score Details Panel (Top Right) -->
       <div id="detailsPanel" class="glass-panel rounded-xl p-4 w-60 pointer-events-auto">
         <h3 data-i18n="traffic_score_details" class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-700 pb-1">
@@ -250,7 +250,7 @@
           </h3>
           <div class="flex items-center gap-2">
             <button id="auto-repair-toggle" onclick="toggleAutoRepair()"
-              class="px-2 py-0.5 rounded text-xs font-mono bg-gray-700 text-gray-400 hover:bg-gray-600 transition"
+              class="px-2 py-0.5 rounded text-xs font-mono bg-gray-700 text-gray-300 hover:bg-gray-600 transition"
               title="Auto-repair services (+10% upkeep)"
               data-i18n="auto_repair"
               data-i18n-title="auto_repair_hint">
@@ -372,7 +372,8 @@
       class="absolute top-4 left-1/2 transform -translate-x-1/2 glass-panel rounded-xl p-2 pointer-events-auto flex gap-2">
       <!-- Language Switcher -->
       <div class="flex items-center bg-gray-800 rounded-lg px-1 border border-gray-600 mr-1">
-        <select onchange="i18n.setLocale(this.value)" id="lang-select"
+        <select onchange="i18n.setLocale(this.value)" id="lang-select" aria-label="Language"
+          data-i18n-aria-label="language"
           class="bg-transparent text-[10px] font-bold text-gray-400 hover:text-white transition-colors cursor-pointer outline-none py-1 px-1">
           <option value="en" class="bg-gray-800 text-white">EN</option>
           <option value="uk" class="bg-gray-800 text-white">UK</option>
@@ -450,11 +451,11 @@
 
       <!-- BUDGET -->
       <div class="mb-3">
-        <div data-i18n="budget" class="text-xs text-gray-400 mb-1">Budget ($)</div>
+        <div id="sandbox-budget-label" data-i18n="budget" class="text-xs text-gray-400 mb-1">Budget ($)</div>
         <div class="flex items-center gap-2">
-          <input type="range" id="budget-slider" min="0" max="10000" step="100" value="2000"
+          <input type="range" id="budget-slider" aria-labelledby="sandbox-budget-label" min="0" max="10000" step="100" value="2000"
             oninput="setSandboxBudget(this.value)" class="flex-1 h-2 bg-gray-700 rounded-lg accent-green-500" />
-          <input type="number" id="budget-input" value="2000" min="0" onchange="setSandboxBudget(this.value)"
+          <input type="number" id="budget-input" aria-labelledby="sandbox-budget-label" value="2000" min="0" onchange="setSandboxBudget(this.value)"
             class="w-20 px-2 py-1 bg-gray-800 border border-gray-600 rounded text-green-400 text-sm text-center font-mono" />
         </div>
         <div class="flex gap-2 mt-2">
@@ -472,80 +473,80 @@
 
       <!-- RPS -->
       <div class="mb-3">
-        <div data-i18n="traffic_rate" class="text-xs text-gray-400 mb-1">Traffic Rate (req/s)</div>
+        <div id="sandbox-rps-label" data-i18n="traffic_rate" class="text-xs text-gray-400 mb-1">Traffic Rate (req/s)</div>
         <div class="flex items-center gap-2">
-          <input type="range" id="rps-slider" min="0" max="50" step="0.5" value="1" oninput="setSandboxRPS(this.value)"
+          <input type="range" id="rps-slider" aria-labelledby="sandbox-rps-label" min="0" max="50" step="0.5" value="1" oninput="setSandboxRPS(this.value)"
             class="flex-1 h-2 bg-gray-700 rounded-lg accent-blue-500" />
-          <input type="number" id="rps-input" value="1" min="0" step="0.5" onchange="setSandboxRPS(this.value)"
+          <input type="number" id="rps-input" aria-labelledby="sandbox-rps-label" value="1" min="0" step="0.5" onchange="setSandboxRPS(this.value)"
             class="w-20 px-2 py-1 bg-gray-800 border border-gray-600 rounded text-blue-400 text-sm text-center font-mono" />
         </div>
       </div>
 
       <!-- TRAFFIC MIX -->
       <div class="mb-3">
-        <div data-i18n="traffic_mix" class="text-xs text-gray-400 mb-1">Traffic Mix (%)</div>
+        <div id="sandbox-mix-label" data-i18n="traffic_mix" class="text-xs text-gray-400 mb-1">Traffic Mix (%)</div>
         <!-- STATIC -->
         <div class="flex items-center gap-2 mb-1">
-          <span data-i18n="traffic_static" class="text-xs text-green-400 truncate max-w-[6rem]">STATIC</span>
-          <input type="range" id="static-slider" min="0" max="100" value="30"
+          <span id="sandbox-mix-static-label" data-i18n="traffic_static" class="text-xs text-green-400 truncate max-w-[6rem]">STATIC</span>
+          <input type="range" id="static-slider" aria-labelledby="sandbox-mix-label sandbox-mix-static-label" min="0" max="100" value="30"
             oninput="setTrafficMix('STATIC',this.value)" class="flex-1 min-w-0 h-1.5 bg-gray-700 rounded-lg accent-green-500" />
-          <input type="number" id="static-input" value="30" min="0" max="100"
+          <input type="number" id="static-input" aria-labelledby="sandbox-mix-label sandbox-mix-static-label" value="30" min="0" max="100"
             onchange="setTrafficMix('STATIC',this.value)"
             class="w-14 flex-shrink-0 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-green-400 text-xs text-center font-mono" />
         </div>
         <!-- READ -->
         <div class="flex items-center gap-2 mb-1">
-          <span data-i18n="traffic_read" class="text-xs text-blue-400 truncate max-w-[6rem]">READ</span>
-          <input type="range" id="read-slider" min="0" max="100" value="20" oninput="setTrafficMix('READ',this.value)"
+          <span id="sandbox-mix-read-label" data-i18n="traffic_read" class="text-xs text-blue-400 truncate max-w-[6rem]">READ</span>
+          <input type="range" id="read-slider" aria-labelledby="sandbox-mix-label sandbox-mix-read-label" min="0" max="100" value="20" oninput="setTrafficMix('READ',this.value)"
             class="flex-1 min-w-0 h-1.5 bg-gray-700 rounded-lg accent-blue-500" />
-          <input type="number" id="read-input" value="20" min="0" max="100" onchange="setTrafficMix('READ',this.value)"
+          <input type="number" id="read-input" aria-labelledby="sandbox-mix-label sandbox-mix-read-label" value="20" min="0" max="100" onchange="setTrafficMix('READ',this.value)"
             class="w-14 flex-shrink-0 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-blue-400 text-xs text-center font-mono" />
         </div>
         <!-- WRITE -->
         <div class="flex items-center gap-2 mb-1">
-          <span data-i18n="traffic_write" class="text-xs text-orange-400 truncate max-w-[6rem]">WRITE</span>
-          <input type="range" id="write-slider" min="0" max="100" value="15" oninput="setTrafficMix('WRITE',this.value)"
+          <span id="sandbox-mix-write-label" data-i18n="traffic_write" class="text-xs text-orange-400 truncate max-w-[6rem]">WRITE</span>
+          <input type="range" id="write-slider" aria-labelledby="sandbox-mix-label sandbox-mix-write-label" min="0" max="100" value="15" oninput="setTrafficMix('WRITE',this.value)"
             class="flex-1 min-w-0 h-1.5 bg-gray-700 rounded-lg accent-orange-500" />
-          <input type="number" id="write-input" value="15" min="0" max="100"
+          <input type="number" id="write-input" aria-labelledby="sandbox-mix-label sandbox-mix-write-label" value="15" min="0" max="100"
             onchange="setTrafficMix('WRITE',this.value)"
             class="w-14 flex-shrink-0 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-orange-400 text-xs text-center font-mono" />
         </div>
         <!-- UPLOAD -->
         <div class="flex items-center gap-2 mb-1">
-          <span data-i18n="traffic_upload" class="text-xs text-yellow-400 truncate max-w-[6rem]">UPLOAD</span>
-          <input type="range" id="upload-slider" min="0" max="100" value="5"
+          <span id="sandbox-mix-upload-label" data-i18n="traffic_upload" class="text-xs text-yellow-400 truncate max-w-[6rem]">UPLOAD</span>
+          <input type="range" id="upload-slider" aria-labelledby="sandbox-mix-label sandbox-mix-upload-label" min="0" max="100" value="5"
             oninput="setTrafficMix('UPLOAD',this.value)"
             class="flex-1 min-w-0 h-1.5 bg-gray-700 rounded-lg accent-yellow-500" />
-          <input type="number" id="upload-input" value="5" min="0" max="100"
+          <input type="number" id="upload-input" aria-labelledby="sandbox-mix-label sandbox-mix-upload-label" value="5" min="0" max="100"
             onchange="setTrafficMix('UPLOAD',this.value)"
             class="w-14 flex-shrink-0 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-yellow-400 text-xs text-center font-mono" />
         </div>
         <!-- SEARCH -->
         <div class="flex items-center gap-2 mb-1">
-          <span data-i18n="traffic_search" class="text-xs text-cyan-400 truncate max-w-[6rem]">SEARCH</span>
-          <input type="range" id="search-slider" min="0" max="100" value="10"
+          <span id="sandbox-mix-search-label" data-i18n="traffic_search" class="text-xs text-cyan-400 truncate max-w-[6rem]">SEARCH</span>
+          <input type="range" id="search-slider" aria-labelledby="sandbox-mix-label sandbox-mix-search-label" min="0" max="100" value="10"
             oninput="setTrafficMix('SEARCH',this.value)" class="flex-1 min-w-0 h-1.5 bg-gray-700 rounded-lg accent-cyan-500" />
-          <input type="number" id="search-input" value="10" min="0" max="100"
+          <input type="number" id="search-input" aria-labelledby="sandbox-mix-label sandbox-mix-search-label" value="10" min="0" max="100"
             onchange="setTrafficMix('SEARCH',this.value)"
             class="w-14 flex-shrink-0 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-cyan-400 text-xs text-center font-mono" />
         </div>
         <!-- INFERENCE (#87) -->
         <div class="flex items-center gap-2 mb-1">
-          <span data-i18n="traffic_inference" class="text-xs text-fuchsia-400 truncate max-w-[6rem]">INFERENCE</span>
-          <input type="range" id="inference-slider" min="0" max="100" value="0"
+          <span id="sandbox-mix-inference-label" data-i18n="traffic_inference" class="text-xs text-fuchsia-400 truncate max-w-[6rem]">INFERENCE</span>
+          <input type="range" id="inference-slider" aria-labelledby="sandbox-mix-label sandbox-mix-inference-label" min="0" max="100" value="0"
             oninput="setTrafficMix('INFERENCE',this.value)"
             class="flex-1 min-w-0 h-1.5 bg-gray-700 rounded-lg accent-fuchsia-500" />
-          <input type="number" id="inference-input" value="0" min="0" max="100"
+          <input type="number" id="inference-input" aria-labelledby="sandbox-mix-label sandbox-mix-inference-label" value="0" min="0" max="100"
             onchange="setTrafficMix('INFERENCE',this.value)"
             class="w-14 flex-shrink-0 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-fuchsia-400 text-xs text-center font-mono" />
         </div>
         <!-- MALICIOUS -->
         <div class="flex items-center gap-2">
-          <span data-i18n="traffic_attack" class="text-xs text-red-400 truncate max-w-[6rem]">ATTACK</span>
-          <input type="range" id="malicious-slider" min="0" max="100" value="20"
+          <span id="sandbox-mix-malicious-label" data-i18n="traffic_attack" class="text-xs text-red-400 truncate max-w-[6rem]">ATTACK</span>
+          <input type="range" id="malicious-slider" aria-labelledby="sandbox-mix-label sandbox-mix-malicious-label" min="0" max="100" value="20"
             oninput="setTrafficMix('MALICIOUS',this.value)"
             class="flex-1 min-w-0 h-1.5 bg-gray-700 rounded-lg accent-red-500" />
-          <input type="number" id="malicious-input" value="20" min="0" max="100"
+          <input type="number" id="malicious-input" aria-labelledby="sandbox-mix-label sandbox-mix-malicious-label" value="20" min="0" max="100"
             onchange="setTrafficMix('MALICIOUS',this.value)"
             class="w-14 flex-shrink-0 px-1 py-0.5 bg-gray-800 border border-gray-600 rounded text-red-400 text-xs text-center font-mono" />
         </div>
@@ -554,8 +555,8 @@
       <!-- BURST -->
       <div class="border-t border-gray-700 pt-2">
         <div class="flex items-center gap-2 mb-2">
-          <span data-i18n="burst_label" class="text-xs text-gray-400">Burst:</span>
-          <input type="number" id="burst-input" value="10" min="1" onchange="setBurstCount(this.value)"
+          <span id="sandbox-burst-label" data-i18n="burst_label" class="text-xs text-gray-400">Burst:</span>
+          <input type="number" id="burst-input" aria-labelledby="sandbox-burst-label" value="10" min="1" onchange="setBurstCount(this.value)"
             class="w-16 px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs text-center font-mono" />
         </div>
         <div class="flex gap-1 flex-wrap">
@@ -743,7 +744,7 @@
     class="hidden absolute z-30 pointer-events-auto cursor-pointer flex flex-col items-center transform -translate-x-1/2 -translate-y-full transition-transform hover:scale-110">
     <div class="text-2xl animate-bounce">⬆️</div>
     <div id="upgrade-cost"
-      class="bg-green-600 text-white text-xs px-2 py-1 rounded font-bold font-mono shadow-lg border border-green-400 mt-1">
+      class="bg-green-700 text-white text-xs px-2 py-1 rounded font-bold font-mono shadow-lg border border-green-400 mt-1">
       $100
     </div>
   </div>
@@ -785,7 +786,7 @@
       <div class="flex justify-center gap-4">
         <button onclick="retryWithSameArchitecture()"
           data-i18n="retry_same"
-          class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-sm">
+          class="bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-sm">
           Retry Same Setup
         </button>
         <button onclick="restartGame()"
@@ -840,14 +841,14 @@
 
         <button onclick="startGame()"
           data-i18n="start_survival"
-          class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-green-400/50">
+          class="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-green-400/50">
           Start Survival
         </button>
 
         <button onclick="openCampaignSelect()"
-          class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-yellow-400/50 flex justify-between items-center">
+          class="w-full bg-yellow-700 hover:bg-yellow-800 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-yellow-400/50 flex justify-between items-center">
           <span data-i18n="campaign_mode">Campaign</span>
-          <span id="campaign-progress-label" class="text-xs opacity-75 font-normal">0/25 ★0</span>
+          <span id="campaign-progress-label" class="text-xs font-normal">0/25 ★0</span>
         </button>
 
         <!-- Replay the walkthrough (#263). The tutorial now respects its own
@@ -865,7 +866,7 @@
         </button>
 
         <button onclick="showTrophies()"
-          class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-amber-400/50 flex justify-between items-center">
+          class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-amber-400/50 flex justify-between items-center">
           <span class="flex items-center gap-2">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -877,7 +878,7 @@
             </svg>
             <span data-i18n="trophies">Trophies</span>
           </span>
-          <span id="trophies-progress-label" class="text-xs opacity-75 font-normal">0/38</span>
+          <span id="trophies-progress-label" class="text-xs font-normal">0/38</span>
         </button>
 
         <button onclick="document.getElementById('upload-file-input')?.click()" id="upload-btn"
@@ -888,7 +889,7 @@
 
         <button onclick="onClickContinueGame()" id="load-btn"
           data-i18n="continue_game"
-          class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-cyan-400/50">
+          class="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-cyan-400/50">
           Continue Game
         </button>
 
@@ -921,7 +922,7 @@
 
         <button onclick="saveGameState('browser')"
           data-i18n="save_browser"
-          class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-green-400/50">
+          class="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-green-400/50">
           Save in Browser
         </button>
 
@@ -961,13 +962,13 @@
 
         <button onclick="downloadArchitecturePNG()" id="btn-share-png"
           data-i18n="share_png"
-          class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-cyan-400/50">
+          class="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-cyan-400/50">
           Download PNG
         </button>
 
         <button onclick="copyShareLink()" id="btn-share-link"
           data-i18n="share_copy_link"
-          class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-teal-400/50">
+          class="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform transition hover:scale-105 font-mono uppercase text-lg border border-teal-400/50">
           Copy Link
         </button>
 
@@ -1020,7 +1021,7 @@
         <div class="flex gap-2">
           <button id="tutorial-next"
             data-i18n="next"
-            class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-6 rounded-lg transition hidden">
+            class="bg-cyan-700 hover:bg-cyan-800 text-white font-bold py-2 px-6 rounded-lg transition hidden">
             Next
           </button>
         </div>
@@ -1704,7 +1705,7 @@
             ← Back
           </button>
           <button onclick="campaignStartCurrentLevel()"
-            class="bg-cyan-600 hover:bg-cyan-500 text-white py-3 px-8 rounded-lg font-mono uppercase text-sm font-bold">
+            class="bg-cyan-700 hover:bg-cyan-800 text-white py-3 px-8 rounded-lg font-mono uppercase text-sm font-bold">
             Start Level →
           </button>
         </div>
@@ -1734,11 +1735,11 @@
         <div id="campaign-debrief-report" class="hidden text-left bg-gray-900/60 border border-gray-700 rounded-lg p-3 mb-4"></div>
         <div class="flex justify-center gap-3">
           <button onclick="campaignRetryLevel()"
-            class="bg-yellow-600 hover:bg-yellow-500 text-white py-3 px-6 rounded-lg font-mono uppercase text-sm">
+            class="bg-yellow-700 hover:bg-yellow-800 text-white py-3 px-6 rounded-lg font-mono uppercase text-sm">
             Retry
           </button>
           <button id="campaign-debrief-next-btn" onclick="campaignNextLevel()"
-            class="bg-green-600 hover:bg-green-500 text-white py-3 px-6 rounded-lg font-mono uppercase text-sm hidden">
+            class="bg-green-700 hover:bg-green-800 text-white py-3 px-6 rounded-lg font-mono uppercase text-sm hidden">
             Next →
           </button>
           <button onclick="exitCampaignToMap()"

@@ -989,4 +989,7 @@ export const NE_TRANSLATIONS = {
     "campaign_fail_rep": "प्रतिष्ठा {n}% भन्दा तल झर्‍यो",
     "campaign_fail_money": "पैसा ${n} भन्दा तल झर्‍यो",
     "campaign_fail_timeout": "समय सकियो",
+
+    // Accessible name of the language switcher (index.html #lang-select)
+    "language": "भाषा",
 };
