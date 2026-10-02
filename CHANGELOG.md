@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Turkish (Türkçe) localization: all 937 strings, including the 25-level campaign, the operator manual and every trophy. The game now has 12 languages.
+- First visit picks the language from the browser's preferences (exact match, then base language) when no language was saved; English otherwise.
 - `npm run serve`: a zero-dependency static server for local play and browser tests.
 - Opt-in performance overlay: open the game with `?perf=1` to see FPS, frame-time p50/p95, renderer draw calls and triangles, live GPU geometries/textures, and live service/request counts.
 
@@ -17,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Request tokens share one sphere geometry and one material per colour instead of allocating and disposing GPU resources for every request. Fail/throttle flashes swap to a shared material rather than mutating it.
 - The per-frame HUD only writes to the DOM when a value actually changes, and no longer reads `innerText` (which forces layout).
 - three.js r128 and Tailwind CSS are now served from this repository (`vendor/`) instead of cdnjs and the Tailwind Play CDN, which Tailwind documents as development-only. The page loads no third-party script or stylesheet; three.js carries a pinned SRI hash, and tests keep the hash and the compiled stylesheet in sync.
+- A string missing from the active locale now falls back to English instead of showing the raw key, and `<html lang>` follows the active language from the first paint.
+- Locale guards (briefing percentages, burst sizes, the level 4 "average" wording) understand Turkish forms such as the prefix percent sign ("%60 READ").
+- The objectives panel keeps clear of the build toolbar (and of the stats panel on phones), scrolling internally when space is short. At 1280×720 its last bonus line used to sit under the toolbar.
 - The board renders at the display's device pixel ratio (capped at 2x) for crisp visuals on HiDPI screens, re-applied on resize.
 
 ## [3.1.0] - 2026-09-15
