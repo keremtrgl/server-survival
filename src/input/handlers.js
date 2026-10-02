@@ -35,6 +35,7 @@ import {
 // game.js's own body calls it), long after both modules evaluate.
 import {
     applyCameraFrustum,
+    applyRendererPixelRatio,
     camera,
     cameraTarget,
     mouse,
@@ -1092,6 +1093,7 @@ window.addEventListener("resize", () => {
     // (#12). It used to be written out twice, which is how the two copies came
     // to disagree about what a portrait viewport should show.
     applyCameraFrustum();
+    applyRendererPixelRatio();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 

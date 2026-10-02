@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Opt-in performance overlay: open the game with `?perf=1` to see FPS, frame-time p50/p95, renderer draw calls and triangles, live GPU geometries/textures, and live service/request counts.
+
+### Changed
+
+- Request tokens share one sphere geometry and one material per colour instead of allocating and disposing GPU resources for every request. Fail/throttle flashes swap to a shared material rather than mutating it.
+- The per-frame HUD only writes to the DOM when a value actually changes, and no longer reads `innerText` (which forces layout).
+- The board renders at the display's device pixel ratio (capped at 2x) for crisp visuals on HiDPI screens, re-applied on resize.
+
 ## [3.1.0] - 2026-09-15
 
 ### Added

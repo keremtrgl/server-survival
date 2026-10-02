@@ -42,6 +42,8 @@ import { recomputePower } from "./src/sim/power.js";
 import { getRollingGoodput, metricsTick, resetMetrics } from "./src/core/metrics.js";
 import { beginRunEpoch, disposeRunScene, scheduleForRun } from "./src/core/run-lifecycle.js";
 import { renderMetricsPanel } from "./src/ui/metrics-panel.js";
+import { setClass, setHtml, setStyle, setText } from "./src/ui/hud-dom.js";
+import { createPerfHud } from "./src/ui/perf-hud.js";
 // Educational failure badges (#156): the floating "why did this fail" labels.
 // game.js owns their scene group (badgeGroup, below), ticks them once per
 // frame next to metricsTick, and clears them on reset.
@@ -268,13 +270,14 @@ function updateServiceHealthIndicators() {
         (s) => s.health < (CONFIG.survival.degradation?.criticalHealth || 30)
     );
 
+    // Runs every frame: setHtml skips the rewrite when nothing changed.
     if (criticalServices.length === 0) {
-        healthContainer.innerHTML =
-            `<div class="text-green-400 text-xs">${i18n.t('all_services_healthy')}</div>`;
+        setHtml(healthContainer,
+            `<div class="text-green-400 text-xs">${i18n.t('all_services_healthy')}</div>`);
         return;
     }
 
-    healthContainer.innerHTML = criticalServices
+    setHtml(healthContainer, criticalServices
         .map(
             (s) => `
         <div class="flex justify-between items-center text-xs mb-1">
@@ -283,7 +286,7 @@ function updateServiceHealthIndicators() {
         </div>
     `
         )
-        .join("");
+        .join(""));
 }
 
 // ==================== END BALANCE OVERHAUL FUNCTIONS ====================
@@ -329,10 +332,25 @@ applyCameraFrustum();
 const cameraTarget = new THREE.Vector3(0, 0, 0);
 resetCamera();
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: true,
+    powerPreference: "high-performance",
+});
+// Render at the display's real density so HiDPI screens get a crisp board,
+// but cap it: above 2x the extra fill cost is large and the visual gain is
+// not. Re-applied on resize, since moving the window between monitors can
+// change devicePixelRatio.
+const MAX_PIXEL_RATIO = 2;
+function applyRendererPixelRatio() {
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO));
+}
+applyRendererPixelRatio();
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 container.appendChild(renderer.domElement);
+// Opt-in frame-time / renderer stats overlay: open the game with ?perf=1.
+const perfHud = createPerfHud();
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
@@ -1247,9 +1265,9 @@ function animate(time) {
         }
     }
 
-    document.getElementById("money-display").innerText = `$${Math.floor(
-        STATE.money
-    )}`;
+    // HUD writes below go through src/ui/hud-dom.js: a value that did not
+    // change since the last frame is not written back to the DOM.
+    setText(document.getElementById("money-display"), `$${Math.floor(STATE.money)}`);
 
     // ASG fleets (#195) bill per instance, so the HUD figure has to use the
     // same factor Service.update() charges with.
@@ -1281,52 +1299,31 @@ function animate(time) {
             // button reading "Upkeep: OFF". A learner budgeting a topology
             // read a running cost off the HUD that the simulation does not
             // apply.
-            upkeepDisplay.innerText = `-$0.00/s ${i18n.t('upkeep_off_label')}`;
-            upkeepDisplay.className = "text-gray-500 font-mono";
+            setText(upkeepDisplay, `-$0.00/s ${i18n.t('upkeep_off_label')}`);
+            setClass(upkeepDisplay, "text-gray-500 font-mono");
         } else if (autoRepairCost > 0) {
-            upkeepDisplay.innerText = `-$${totalUpkeep.toFixed(2)}/s ${i18n.t('plus_repair')}`;
-            upkeepDisplay.className = "text-orange-400 font-mono";
+            setText(upkeepDisplay, `-$${totalUpkeep.toFixed(2)}/s ${i18n.t('plus_repair')}`);
+            setClass(upkeepDisplay, "text-orange-400 font-mono");
         } else if (multiplier > 1.05) {
-            upkeepDisplay.innerText = `-$${totalUpkeep.toFixed(
-                2
-            )}/s (×${multiplier.toFixed(2)})`;
-            upkeepDisplay.className = "text-red-400 font-mono";
+            setText(upkeepDisplay, `-$${totalUpkeep.toFixed(2)}/s (×${multiplier.toFixed(2)})`);
+            setClass(upkeepDisplay, "text-red-400 font-mono");
         } else {
-            upkeepDisplay.innerText = `-$${totalUpkeep.toFixed(2)}/s`;
-            upkeepDisplay.className = "text-red-400 font-mono";
+            setText(upkeepDisplay, `-$${totalUpkeep.toFixed(2)}/s`);
+            setClass(upkeepDisplay, "text-red-400 font-mono");
         }
     }
 
     if (STATE.gameMode === "survival") {
-        const staticEl = document.getElementById("mix-static");
-        const readEl = document.getElementById("mix-read");
-        const writeEl = document.getElementById("mix-write");
-        const uploadEl = document.getElementById("mix-upload");
-        const searchEl = document.getElementById("mix-search");
-        const maliciousEl = document.getElementById("mix-malicious");
-
-        if (staticEl)
-            staticEl.textContent =
-                Math.round((STATE.trafficDistribution.STATIC || 0) * 100) + "%";
-        if (readEl)
-            readEl.textContent =
-                Math.round((STATE.trafficDistribution.READ || 0) * 100) + "%";
-        if (writeEl)
-            writeEl.textContent =
-                Math.round((STATE.trafficDistribution.WRITE || 0) * 100) + "%";
-        if (uploadEl)
-            uploadEl.textContent =
-                Math.round((STATE.trafficDistribution.UPLOAD || 0) * 100) + "%";
-        if (searchEl)
-            searchEl.textContent =
-                Math.round((STATE.trafficDistribution.SEARCH || 0) * 100) + "%";
-        if (maliciousEl && !STATE.maliciousSpikeActive)
-            maliciousEl.textContent =
-                Math.round((STATE.trafficDistribution.MALICIOUS || 0) * 100) + "%";
-        const inferenceEl = document.getElementById("mix-inference");
-        if (inferenceEl)
-            inferenceEl.textContent =
-                Math.round((STATE.trafficDistribution.INFERENCE || 0) * 100) + "%";
+        const pct = (type) =>
+            Math.round((STATE.trafficDistribution[type] || 0) * 100) + "%";
+        setText(document.getElementById("mix-static"), pct("STATIC"));
+        setText(document.getElementById("mix-read"), pct("READ"));
+        setText(document.getElementById("mix-write"), pct("WRITE"));
+        setText(document.getElementById("mix-upload"), pct("UPLOAD"));
+        setText(document.getElementById("mix-search"), pct("SEARCH"));
+        if (!STATE.maliciousSpikeActive)
+            setText(document.getElementById("mix-malicious"), pct("MALICIOUS"));
+        setText(document.getElementById("mix-inference"), pct("INFERENCE"));
     }
 
     // Power HUD badge (#87): kW used/cap, shown only once a GPU or a
@@ -1341,35 +1338,28 @@ function animate(time) {
         if (powered) {
             const powerEl = document.getElementById("power-display");
             if (powerEl) {
-                powerEl.textContent = i18n.t("power_hud", {
+                setText(powerEl, i18n.t("power_hud", {
                     used: STATE.power.usedKw,
                     cap: STATE.power.capKw,
-                });
-                powerEl.className =
+                }));
+                setClass(powerEl,
                     STATE.power.usedKw >= STATE.power.capKw
                         ? "text-red-400 font-mono"
-                        : "text-yellow-300 font-mono";
+                        : "text-yellow-300 font-mono");
             }
         }
     }
 
     STATE.reputation = Math.min(100, STATE.reputation);
-    document.getElementById("rep-bar").style.width = `${Math.max(
-        0,
-        STATE.reputation
-    )}%`;
-    document.getElementById("rep-display").textContent = `${Math.round(
-        Math.max(0, STATE.reputation)
-    )}%`;
-    document.getElementById(
-        "rps-display"
-    ).innerText = `${STATE.currentRPS.toFixed(1)} ${i18n.t('req_per_sec')}`;
+    setStyle(document.getElementById("rep-bar"), "width", `${Math.max(0, STATE.reputation)}%`);
+    setText(document.getElementById("rep-display"), `${Math.round(Math.max(0, STATE.reputation))}%`);
+    setText(
+        document.getElementById("rps-display"),
+        `${STATE.currentRPS.toFixed(1)} ${i18n.t('req_per_sec')}`
+    );
 
     // Update elapsed time
-    const elapsedEl = document.getElementById("elapsed-time");
-    if (elapsedEl) {
-        elapsedEl.textContent = formatTime(STATE.elapsedGameTime);
-    }
+    setText(document.getElementById("elapsed-time"), formatTime(STATE.elapsedGameTime));
 
     // Rolling goodput (#261). Deliberately NOT behind the Monitoring gate:
     // this is one board-wide headline number, the equivalent of knowing your
@@ -1380,15 +1370,15 @@ function animate(time) {
     if (goodputEl) {
         const g = getRollingGoodput();
         if (g === null) {
-            goodputEl.textContent = "--";
-            goodputEl.className = "text-gray-500 font-mono text-lg font-bold";
+            setText(goodputEl, "--");
+            setClass(goodputEl, "text-gray-500 font-mono text-lg font-bold");
         } else {
-            goodputEl.textContent = `${Math.round(g * 100)}%`;
+            setText(goodputEl, `${Math.round(g * 100)}%`);
             // Coloured on the same scale the load rings use, so "amber means
             // busy, red means losing" reads the same everywhere on screen.
             const tone =
                 g >= 0.9 ? "text-green-400" : g >= 0.7 ? "text-yellow-400" : "text-red-400";
-            goodputEl.className = `${tone} font-mono text-lg font-bold`;
+            setClass(goodputEl, `${tone} font-mono text-lg font-bold`);
         }
     }
 
@@ -1398,7 +1388,7 @@ function animate(time) {
     const rpsMilestoneRow = document.getElementById("rps-milestone-row");
 
     if (STATE.gameMode === "survival" && rpsMilestoneRow) {
-        rpsMilestoneRow.style.display = "flex";
+        setStyle(rpsMilestoneRow, "display", "flex");
 
         // Show next RPS acceleration milestone instead of arbitrary integer
         const milestones = CONFIG.survival.rpsAcceleration?.milestones || [];
@@ -1417,16 +1407,16 @@ function animate(time) {
             if (nextMilestone) {
                 const timeRemaining = Math.max(0, nextMilestone.time - currentTime);
 
-                rpsNextEl.textContent = `×${nextMilestone.multiplier.toFixed(1)}`;
-                rpsCountdownEl.textContent = formatTime(timeRemaining);
+                setText(rpsNextEl, `×${nextMilestone.multiplier.toFixed(1)}`);
+                setText(rpsCountdownEl, formatTime(timeRemaining));
             } else {
                 // All milestones reached
-                rpsNextEl.textContent = i18n.t('max');
-                rpsCountdownEl.textContent = "--";
+                setText(rpsNextEl, i18n.t('max'));
+                setText(rpsCountdownEl, "--");
             }
         }
-    } else if (rpsMilestoneRow) {
-        rpsMilestoneRow.style.display = "none";
+    } else {
+        setStyle(rpsMilestoneRow, "display", "none");
     }
 
     // Update failures panel with table format
@@ -1438,51 +1428,20 @@ function animate(time) {
     const points = CONFIG.survival.SCORE_POINTS;
     if (totalFailures > (STATE.failuresDismissedAt || 0) && failuresPanel) {
         failuresPanel.classList.remove("hidden");
-        document.getElementById(
-            "failures-total"
-        ).textContent = `${totalFailures} ${i18n.t('total')}`;
+        setText(document.getElementById("failures-total"), `${totalFailures} ${i18n.t('total')}`);
 
-        // Update counts
-        document.getElementById("fail-malicious").textContent =
-            STATE.failures.MALICIOUS;
-        document.getElementById("fail-static").textContent = STATE.failures.STATIC;
-        document.getElementById("fail-read").textContent = STATE.failures.READ;
-        document.getElementById("fail-write").textContent = STATE.failures.WRITE;
-        document.getElementById("fail-upload").textContent = STATE.failures.UPLOAD;
-        document.getElementById("fail-search").textContent = STATE.failures.SEARCH;
-        document.getElementById("fail-inference").textContent = STATE.failures.INFERENCE;
-
-        // Update reputation loss (malicious = -8, others = -2)
-        document.getElementById("fail-malicious-rep").textContent =
-            STATE.failures.MALICIOUS * Math.abs(points.MALICIOUS_PASSED_REPUTATION);
-        document.getElementById("fail-static-rep").textContent =
-            STATE.failures.STATIC * Math.abs(points.FAIL_REPUTATION);
-        document.getElementById("fail-read-rep").textContent =
-            STATE.failures.READ * Math.abs(points.FAIL_REPUTATION);
-        document.getElementById("fail-write-rep").textContent =
-            STATE.failures.WRITE * Math.abs(points.FAIL_REPUTATION);
-        document.getElementById("fail-upload-rep").textContent =
-            STATE.failures.UPLOAD * Math.abs(points.FAIL_REPUTATION);
-        document.getElementById("fail-search-rep").textContent =
-            STATE.failures.SEARCH * Math.abs(points.FAIL_REPUTATION);
-        document.getElementById("fail-inference-rep").textContent =
-            STATE.failures.INFERENCE * Math.abs(points.FAIL_REPUTATION);
-
-        // Hide rows with 0 failures
-        document.getElementById("fail-row-malicious").style.display =
-            STATE.failures.MALICIOUS > 0 ? "" : "none";
-        document.getElementById("fail-row-static").style.display =
-            STATE.failures.STATIC > 0 ? "" : "none";
-        document.getElementById("fail-row-read").style.display =
-            STATE.failures.READ > 0 ? "" : "none";
-        document.getElementById("fail-row-write").style.display =
-            STATE.failures.WRITE > 0 ? "" : "none";
-        document.getElementById("fail-row-upload").style.display =
-            STATE.failures.UPLOAD > 0 ? "" : "none";
-        document.getElementById("fail-row-search").style.display =
-            STATE.failures.SEARCH > 0 ? "" : "none";
-        document.getElementById("fail-row-inference").style.display =
-            STATE.failures.INFERENCE > 0 ? "" : "none";
+        // Per-type count, reputation cost (malicious = -8, others = -2), and
+        // hide rows with 0 failures.
+        for (const type of ["MALICIOUS", "STATIC", "READ", "WRITE", "UPLOAD", "SEARCH", "INFERENCE"]) {
+            const key = type.toLowerCase();
+            const count = STATE.failures[type];
+            const repCost = Math.abs(
+                type === "MALICIOUS" ? points.MALICIOUS_PASSED_REPUTATION : points.FAIL_REPUTATION
+            );
+            setText(document.getElementById(`fail-${key}`), count);
+            setText(document.getElementById(`fail-${key}-rep`), count * repCost);
+            setStyle(document.getElementById(`fail-row-${key}`), "display", count > 0 ? "" : "none");
+        }
     }
 
     if (STATE.internetNode.ring) {
@@ -1540,6 +1499,13 @@ function animate(time) {
     }
 
     renderer.render(scene, camera);
+    if (perfHud.enabled) {
+        perfHud.frame(time, {
+            renderer,
+            requests: STATE.requests.length,
+            services: STATE.services.length,
+        });
+    }
 }
 
 // Analyze why the player failed and generate helpful tips
@@ -1864,6 +1830,7 @@ export {
     calculateTargetRPS,
     drainSpawnCredit,
     applyCameraFrustum,
+    applyRendererPixelRatio,
     camera,
     cameraTarget,
     connectionGroup,

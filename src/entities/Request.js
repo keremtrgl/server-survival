@@ -11,6 +11,7 @@ import { FAIL_REASONS } from "../core/failure-reasons.js";
 import { tickRetry } from "../sim/retry.js";
 import { recordBreakerFailure } from "../sim/circuit-breaker.js";
 import { requestGroup } from "../../game.js";
+import { getRequestGeometry, getRequestMaterial } from "../render/request-visuals.js";
 
 export class Request {
     constructor(type) {
@@ -44,9 +45,9 @@ export class Request {
 
         const color = this.typeConfig.color;
 
-        const geo = new THREE.SphereGeometry(0.4, 8, 8);
-        const mat = new THREE.MeshBasicMaterial({ color: color });
-        this.mesh = new THREE.Mesh(geo, mat);
+        // Geometry and material are shared across requests — see
+        // src/render/request-visuals.js for the ownership rules.
+        this.mesh = new THREE.Mesh(getRequestGeometry(), getRequestMaterial(color));
 
         this.mesh.position.copy(STATE.internetNode.position);
         this.mesh.position.y = 2;
@@ -147,20 +148,12 @@ export class Request {
         if (this._destroyed) return;
         this._destroyed = true;
 
+        // Only detach: the geometry and material are shared, page-lifetime
+        // resources (src/render/request-visuals.js) and must not be disposed.
         try {
             requestGroup.remove(this.mesh);
         } catch {
-            // Detached or malformed scene nodes still release their resources.
-        }
-        try {
-            this.mesh?.geometry?.dispose();
-        } catch {
-            // Teardown is best-effort: still dispose the material below.
-        }
-        try {
-            this.mesh?.material?.dispose();
-        } catch {
-            // A malformed material must not block the remaining cleanup.
+            // A detached or malformed scene node must not block the rest.
         }
 
         if (this.isMoving && this.target && typeof this.target.incomingCount === 'number') {
