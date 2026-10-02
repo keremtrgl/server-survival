@@ -14,6 +14,18 @@
   width: min(20rem, calc(100vw - 2rem));
 }
 
+/* The campaign/survival objectives panel sits in the same bottom-left slot
+   as the Sandbox panel and needs the same toolbar clearance: at 1280x720 its
+   last bonus line used to end under the build toolbar. */
+#objectivesPanel {
+  box-sizing: border-box;
+  bottom: calc(var(--toolbar-safe-height) + env(safe-area-inset-bottom));
+  max-height: max(6rem, calc(100dvh - var(--toolbar-safe-height) - 24rem - env(safe-area-inset-bottom)));
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,

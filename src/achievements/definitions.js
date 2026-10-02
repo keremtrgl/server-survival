@@ -1,6 +1,6 @@
 // Achievement definitions (#158). Pure data + pure predicates — the engine in
 // achievements.js owns all state, persistence and hook plumbing. Names and
-// descriptions live in i18n as ach_<id>_name / ach_<id>_desc (×10 locales).
+// descriptions live in i18n as ach_<id>_name / ach_<id>_desc (every shipped locale).
 //
 // Two check kinds (see the spec, as amended by the integration critique):
 //
