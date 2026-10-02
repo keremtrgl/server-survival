@@ -990,4 +990,7 @@ export const TR_TRANSLATIONS = {
     "campaign_fail_rep": "İtibar %{n} sınırının altına düştü",
     "campaign_fail_money": "Para ${n} sınırının altına düştü",
     "campaign_fail_timeout": "Süre doldu",
+
+    // Accessible name of the language switcher (index.html #lang-select)
+    "language": "Dil",
 };

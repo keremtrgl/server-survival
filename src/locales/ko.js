@@ -989,4 +989,7 @@ export const KO_TRANSLATIONS = {
     "campaign_fail_rep": "평판이 {n}% 아래로 떨어졌습니다",
     "campaign_fail_money": "돈이 ${n} 아래로 떨어졌습니다",
     "campaign_fail_timeout": "시간이 초과되었습니다",
+
+    // Accessible name of the language switcher (index.html #lang-select)
+    "language": "언어",
 };

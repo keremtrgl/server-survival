@@ -989,4 +989,7 @@ export const RU_TRANSLATIONS = {
     "campaign_fail_rep": "Репутация упала ниже {n}%",
     "campaign_fail_money": "Деньги упали ниже ${n}",
     "campaign_fail_timeout": "Время вышло",
+
+    // Accessible name of the language switcher (index.html #lang-select)
+    "language": "Язык",
 };

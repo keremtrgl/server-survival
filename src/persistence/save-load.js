@@ -295,12 +295,12 @@ function loadGameState(saveData) {
         if (autoRepairBtn) {
             if (STATE.autoRepairEnabled) {
                 autoRepairBtn.textContent = i18n.t('upkeep_on');
-                autoRepairBtn.classList.remove("text-gray-400");
+                autoRepairBtn.classList.remove("text-gray-300");
                 autoRepairBtn.classList.add("text-green-400");
             } else {
                 autoRepairBtn.textContent = i18n.t('upkeep_off');
                 autoRepairBtn.classList.remove("text-green-400");
-                autoRepairBtn.classList.add("text-gray-400");
+                autoRepairBtn.classList.add("text-gray-300");
             }
         }
         updateRepairCostTable();
