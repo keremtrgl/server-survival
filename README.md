@@ -253,8 +253,9 @@ python3 -m http.server 8000    # then open http://localhost:8000
 There is still **zero build step** — the dev tooling is optional and for contributors only:
 
 - `npm install` once, then `npm run check` runs ESLint + the full Vitest suite (72 test files, 1201 tests).
+- `npm run test:e2e` runs the Playwright browser suite in real Chromium: boot, input, layout on desktop and phone, accessibility (axe-core), save/load, languages, GPU-resource leaks and visual regression.
 - Changed or added Tailwind classes? Run `npm run build:css` and commit `vendor/tailwind/tailwind.css`; CI fails when the committed stylesheet is stale.
-- CI runs the same check on every PR.
+- CI runs the unit, simulation, CSS-freshness and browser checks on every PR.
 - The code is native ESM: `game.js` plus focused modules under `src/` (`sim/`, `core/`, `ui/`, `campaign/`, `persistence/`, `input/`).
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow.

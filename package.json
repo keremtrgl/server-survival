@@ -2,7 +2,7 @@
   "name": "server-survival",
   "version": "3.1.0",
   "private": true,
-  "description": "Dev tooling for Server Survival. The game itself has NO build step at serve time \u2014 it is served raw from this repo by GitHub Pages, including the committed vendor/ assets. Everything here is optional and for contributors only (lint, tests, CSS build, CI).",
+  "description": "Dev tooling for Server Survival. The game itself has NO build step at serve time — it is served raw from this repo by GitHub Pages, including the committed vendor/ assets. Everything here is optional and for contributors only (lint, tests, CSS build, CI).",
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",
@@ -15,7 +15,9 @@
     "check": "npm run lint && npm run test"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
+    "@fontsource/inter": "^5.3.0",
     "@playwright/test": "1.56",
     "eslint": "^10.7.0",
     "globals": "^17.7.0",

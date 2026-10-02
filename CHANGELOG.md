@@ -11,8 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Turkish (Türkçe) localization: all 937 strings, including the 25-level campaign, the operator manual and every trophy. The game now has 12 languages.
 - First visit picks the language from the browser's preferences (exact match, then base language) when no language was saved; English otherwise.
+- Playwright browser test suite (`e2e/`, `npm run test:e2e`) and a CI job that runs it: offline boot with WebGL, real mouse and touch input, campaign/sandbox/survival flows, layout at 1280×720 and on a phone, axe-core WCAG 2.1 A/AA scans, keyboard operation, save/load and corrupt-import rejection, language detection and switching, GPU-geometry leak detection across restarts, RPS clamping, and visual regression with machine-independent baselines.
+- CI fails when the committed Tailwind stylesheet is stale (`npm run check:css`) and uploads the Playwright report and traces when browser tests fail.
 - `npm run serve`: a zero-dependency static server for local play and browser tests.
 - Opt-in performance overlay: open the game with `?perf=1` to see FPS, frame-time p50/p95, renderer draw calls and triangles, live GPU geometries/textures, and live service/request counts.
+
+### Fixed (accessibility)
+
+- The language switcher has an accessible name in every language.
+- All 19 Sandbox sliders and number fields are labelled for screen readers.
+- Menu, dialog and tutorial buttons meet WCAG AA text contrast (darker green, yellow, amber, teal and cyan fills).
+- Page zoom is no longer disabled (`user-scalable=no` removed). The board claims pinch and drag gestures itself via `touch-action: none`.
 
 ### Changed
 
@@ -22,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A string missing from the active locale now falls back to English instead of showing the raw key, and `<html lang>` follows the active language from the first paint.
 - Locale guards (briefing percentages, burst sizes, the level 4 "average" wording) understand Turkish forms such as the prefix percent sign ("%60 READ").
 - The objectives panel keeps clear of the build toolbar (and of the stats panel on phones), scrolling internally when space is short. At 1280×720 its last bonus line used to sit under the toolbar.
+- The right-hand HUD column stops above the build toolbar and scrolls; at 1280×720 the finance totals used to sit under the toolbar.
 - The board renders at the display's device pixel ratio (capped at 2x) for crisp visuals on HiDPI screens, re-applied on resize.
 
 ## [3.1.0] - 2026-09-15
