@@ -127,12 +127,12 @@ describe("the pointer does not outlive its run either", () => {
 });
 
 describe("run-owned Three.js visuals do not outlive their run", () => {
-    it("reset disposes service child visuals and request visuals before clearing arrays", () => {
+    it("reset disposes service child visuals and detaches request visuals before clearing arrays", () => {
         resetGame("sandbox");
         const sqs = place("sqs");
         const request = new Request("READ");
         STATE.requests.push(request);
-        const visuals = [sqs.loadRing, sqs.queueFill, sqs.mesh, request.mesh];
+        const visuals = [sqs.loadRing, sqs.queueFill, sqs.mesh];
 
         resetGame("sandbox");
 
@@ -140,6 +140,10 @@ describe("run-owned Three.js visuals do not outlive their run", () => {
             expect(mesh.geometry.disposed).toBe(true);
             expect(mesh.material.disposed).toBe(true);
         }
+        // Request tokens share page-lifetime GPU resources
+        // (src/render/request-visuals.js): reset detaches them, never disposes.
+        expect(request.mesh.geometry.disposed).toBe(false);
+        expect(request.mesh.material.disposed).toBe(false);
         expect(STATE.services).toEqual([]);
         expect(STATE.requests).toEqual([]);
         expect(STATE.connections).toEqual([]);
@@ -153,7 +157,7 @@ describe("run-owned Three.js visuals do not outlive their run", () => {
         const sqs = place("sqs");
         const request = new Request("READ");
         STATE.requests.push(request);
-        const visuals = [sqs.loadRing, sqs.queueFill, sqs.mesh, request.mesh];
+        const visuals = [sqs.loadRing, sqs.queueFill, sqs.mesh];
 
         loadGameState({
             version: "2.0",

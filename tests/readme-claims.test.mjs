@@ -191,7 +191,7 @@ describe("the README's numbers are the game's numbers", () => {
             .match(/(^|[^.\w])(it|test)\s*\(/gm) || [];
         expect(Number(m[2]), "the README claims fewer tests than are written")
             .toBeGreaterThanOrEqual(staticIts.length);
-        expect(Number(m[2]), "the README test count is stale").toBe(1172);
+        expect(Number(m[2]), "the README test count is stale").toBe(1183);
     });
 
     it("describes the two survival cost curves", () => {

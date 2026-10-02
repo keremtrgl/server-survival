@@ -4,7 +4,7 @@ import {
 } from "../../src/core/run-lifecycle.js";
 import { Request } from "../../src/entities/Request.js";
 import { STATE } from "../../src/state.js";
-import { animate, resetGame } from "../../game.js";
+import { animate, requestGroup, resetGame } from "../../game.js";
 import { resetWorld, place } from "../helpers/sim-world.mjs";
 
 afterEach(() => vi.useRealTimers());
@@ -142,11 +142,18 @@ describe("run lifecycle", () => {
     resetWorld();
     const sqs = place("sqs");
     const request = new Request("READ");
-    const visuals = [sqs.loadRing, sqs.queueFill, sqs.mesh, request.mesh];
+    const visuals = [sqs.loadRing, sqs.queueFill, sqs.mesh];
     const disposals = visuals.flatMap((mesh) => [
       vi.spyOn(mesh.geometry, "dispose"),
       vi.spyOn(mesh.material, "dispose"),
     ]);
+    // Request tokens draw with shared, page-lifetime resources
+    // (src/render/request-visuals.js): destroy detaches, never disposes.
+    const sharedDisposals = [
+      vi.spyOn(request.mesh.geometry, "dispose"),
+      vi.spyOn(request.mesh.material, "dispose"),
+    ];
+    const detach = vi.spyOn(requestGroup, "remove");
 
     sqs.destroy();
     request.destroy();
@@ -158,6 +165,9 @@ describe("run lifecycle", () => {
       expect(mesh.geometry.disposed).toBe(true);
       expect(mesh.material.disposed).toBe(true);
     }
+    for (const dispose of sharedDisposals) expect(dispose).not.toHaveBeenCalled();
+    expect(detach).toHaveBeenCalledTimes(1);
+    detach.mockRestore();
   });
 
   it("continues destroying a service when one child resource is malformed", () => {
