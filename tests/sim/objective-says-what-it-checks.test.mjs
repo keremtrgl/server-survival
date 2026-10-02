@@ -58,7 +58,7 @@ describe("level 4's DB objective is graded the way it is worded", () => {
             // reintroduces any of them is claiming a rule the check does not
             // apply.
             expect(label).not.toMatch(
-                /average|schnitt|moyenne|medio|média|平均|평균|средн|серед|औसत/i
+                /average|schnitt|moyenne|medio|média|平均|평균|средн|серед|औसत|ortalama/i
             );
             // ...and it still says the thing it does check. Nepali writes the
             // threshold in Devanagari digits, so an ASCII-only check would

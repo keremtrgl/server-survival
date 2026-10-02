@@ -989,4 +989,7 @@ export const PT_BR_TRANSLATIONS = {
     "campaign_fail_rep": "A reputação caiu abaixo de {n}%",
     "campaign_fail_money": "O dinheiro caiu abaixo de ${n}",
     "campaign_fail_timeout": "O tempo acabou",
+
+    // Accessible name of the language switcher (index.html #lang-select)
+    "language": "Idioma",
 };

@@ -990,4 +990,7 @@ export const EN_TRANSLATIONS = {
     "campaign_fail_rep": "Reputation dropped below {n}%",
     "campaign_fail_money": "Money dropped below ${n}",
     "campaign_fail_timeout": "Ran out of time",
+
+    // Accessible name of the language switcher (index.html #lang-select)
+    "language": "Language",
 };

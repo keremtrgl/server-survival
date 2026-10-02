@@ -1024,4 +1024,7 @@ export const HI_TRANSLATIONS = {
     "campaign_fail_rep": "Reputation {n}% से नीचे गिर गई",
     "campaign_fail_money": "पैसा ${n} से नीचे गिर गया",
     "campaign_fail_timeout": "समय खत्म हो गया",
+
+    // Accessible name of the language switcher (index.html #lang-select)
+    "language": "भाषा",
 };
